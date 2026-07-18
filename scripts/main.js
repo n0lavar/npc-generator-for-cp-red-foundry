@@ -1,3 +1,5 @@
+import { registerActorDirectoryHooks } from "./foundry/actor-directory.js";
+
 Hooks.once("init", () => {
-  console.log("Hello World");
+  registerActorDirectoryHooks();
 });
