@@ -24,6 +24,99 @@ The character data originates from [n0lavar/cp_red_npc_generator](https://github
 - Avoid relying on private Foundry or game-system APIs when a supported public API is available.
 - Keep `module.json` compatible with Foundry VTT 12 and ensure its `id` matches the module directory name.
 
+## Language and Front-End Best Practices
+
+### JavaScript
+
+- Use native ES modules with explicit `import` and `export` statements. Register entry points through the `esmodules` field in `module.json`.
+- Prefer `const`; use `let` only when reassignment is required. Do not use `var`.
+- Use `async`/`await` for Foundry document operations and template loading. Always await create, update, delete, and render operations when later work depends on their completion.
+- Keep functions small and focused. Separate generator parsing, validation, Cyberpunk RED mapping, Foundry document persistence, and UI behavior.
+- Use descriptive names and JSDoc for public functions, complex data shapes, and integration boundaries.
+- Do not mutate generator input objects or Foundry document source data directly. Build new plain objects and use the supported Document methods.
+- Use optional chaining and nullish coalescing when reading external or system-owned data, but validate required fields explicitly.
+- Handle errors at user-triggered boundaries. Log actionable technical context with a stable module prefix and show a localized notification when the user must act.
+- Never use `eval`, `Function`, inline script strings, or dynamically generated executable code.
+- Do not expose secrets, filesystem paths, access tokens, or private generator data in logs or chat messages.
+- Add automated tests for pure parsing, normalization, validation, and mapping code. Keep Foundry-dependent code behind narrow adapters so most logic can be tested without a running world.
+
+### HTML and Handlebars
+
+- Store reusable UI templates in `templates/`; do not build substantial interfaces by concatenating HTML strings in JavaScript.
+- Use semantic HTML, associated labels, correct button types, and keyboard-accessible controls.
+- Use Foundry localization helpers for every user-visible string, including labels, titles, validation messages, notifications, and tooltips.
+- Pass prepared plain view models to templates. Do not put business logic, document mutations, or complex calculations in Handlebars.
+- Treat imported generator content as untrusted input. Rely on escaped Handlebars output by default and sanitize any content that must be rendered as HTML.
+- Use module-scoped element classes and `data-*` attributes for behavior hooks. Do not use translated text or fragile DOM position selectors to identify controls.
+
+### CSS
+
+- Scope every selector beneath a unique module root class such as `.npc-generator-for-cp-red-foundry` to avoid affecting Foundry or other modules.
+- Prefer Foundry CSS variables and existing application patterns so the UI works with supported themes.
+- Use classes instead of inline styles and avoid `!important` unless overriding an unavoidable upstream rule.
+- Keep layouts responsive to narrow application windows and browser zoom. Do not rely on fixed viewport dimensions.
+- Preserve visible focus indicators, sufficient contrast, readable text sizes, and reduced-motion preferences.
+
+### JSON and Data Contracts
+
+- Keep all JSON strictly valid: double-quoted keys and strings, no comments, and no trailing commas.
+- Treat the generator output format and the Cyberpunk RED system schema as separate versioned contracts.
+- Validate external data before mapping it. Reject or report malformed required fields and preserve unknown fields when practical.
+- Keep migrations explicit whenever stored flags, settings, or cached import data change shape.
+
+## Foundry VTT Best Practices
+
+### Package Structure and Manifest
+
+- Keep `module.json` at the module root and maintain accurate `minimum`, `verified`, and, when necessary, `maximum` compatibility values.
+- The manifest `id` must exactly match the module directory name. For a distributable package, use a unique lowercase, hyphen-separated ID without underscores or other special characters.
+- Declare the supported Cyberpunk RED system in the manifest before distribution so the module cannot be enabled in unrelated game systems.
+- Use conventional directories: `scripts/`, `templates/`, `styles/`, `lang/`, `packs/`, and `assets/` as applicable.
+- Update the module version for releases and keep manifest, release archive, and compatibility metadata synchronized.
+
+### Lifecycle and Hooks
+
+- Use `Hooks.once("init", ...)` for registrations that must exist during initialization, such as settings, keybindings, custom sheets, or configuration entries.
+- Use `Hooks.once("ready", ...)` only when world documents and the active user are required.
+- Use focused render and document hooks instead of monkey-patching core prototypes. If patching is unavoidable, isolate it, document why, and fail safely when the target API changes.
+- Use `Hooks.once` for one-time setup and `Hooks.on` only for repeatable events. Retain hook IDs and call `Hooks.off` when listeners have a shorter lifetime than the module.
+- Make render-hook code idempotent so repeated application renders do not duplicate buttons, listeners, or markup.
+
+### Documents and Cyberpunk RED Integration
+
+- Create and update Actors and embedded Items through supported Foundry Document APIs. Never write directly to the world database or mutate `_source`.
+- Inspect the installed Cyberpunk RED system's current Actor and Item schemas before implementing mappings; do not infer paths solely from sheet markup or old examples.
+- Prefer batch embedded-document operations when importing multiple items, while preserving useful validation errors for individual records.
+- Build the complete actor source in memory, validate it, and only then persist it. Avoid leaving partially imported actors after a failed operation; clean up safely or mark the actor as incomplete.
+- Store module-owned metadata under namespaced flags, for example `flags.npc_generator_for_cp_red_foundry`, and do not overwrite flags owned by Foundry, the system, or other modules.
+- Make imports reproducible where possible by recording the generator version, source options, seed, import schema version, and stable external identifiers in module flags.
+- Define duplicate-import behavior explicitly: create a new actor, update a previously imported actor, or ask the user. Never overwrite an existing actor silently.
+
+### Permissions, Security, and Sockets
+
+- Check `game.user` permissions before displaying privileged controls and again before executing privileged operations. Hiding a button is not authorization.
+- Default actor creation and world-changing import actions to GM users unless a documented workflow safely supports players.
+- Treat socket payloads as untrusted. Validate message type, sender authority, data shape, and target document before performing any action.
+- Do not assume that a socket sender is authorized merely because the message uses the module namespace.
+- Avoid global mutable state. If cross-client coordination is required, designate a single responsible GM and make operations idempotent to prevent duplicate actors.
+
+### Settings, Localization, and UI
+
+- Register settings during `init`. Choose `world` scope for shared import behavior and `client` scope for per-user presentation preferences.
+- Namespace localization keys with the module ID and provide at least `lang/en.json`. Do not hard-code user-visible English strings in JavaScript or templates.
+- Put the primary `Generate NPC` action in the Actor Directory because the operation creates an Actor. Restrict it to authorized users and prevent duplicate insertion on rerender.
+- Use Foundry applications, dialogs, notifications, and form-handling conventions instead of browser-native prompts or alerts.
+- Disable submit controls while an import is running, show validation failures clearly, and provide a useful success message that identifies the created actor.
+
+### Compatibility, Performance, and Diagnostics
+
+- Target the public Foundry VTT v12 API. Feature-detect optional system behavior and produce a clear compatibility error instead of failing later with an undefined-property exception.
+- Minimize work in global and render hooks. Cache immutable lookup data where appropriate, but invalidate caches when the system or source contract changes.
+- Avoid rerendering entire directories or sheets when a targeted document update is sufficient.
+- Prefix diagnostic messages consistently, for example `NPC Generator |`, and keep routine production logging quiet.
+- Test with a clean Foundry VTT 12 world, the supported Cyberpunk RED system, GM and player users, empty and populated Actor Directories, malformed generator input, and common module combinations.
+- Before release, verify activation, deactivation, world reload, import failure recovery, localization, permissions, and absence of console errors.
+
 ## External Project
 
 Generator repository: <https://github.com/n0lavar/cp_red_npc_generator>
