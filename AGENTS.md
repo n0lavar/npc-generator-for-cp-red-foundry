@@ -24,6 +24,110 @@ The character data originates from [n0lavar/cp_red_npc_generator](https://github
 - Avoid relying on private Foundry or game-system APIs when a supported public API is available.
 - Keep `module.json` compatible with Foundry VTT 12 and ensure its `id` matches the module directory name.
 
+## Project Structure Guidelines
+
+Use the following structure as the module grows. Create directories only when they contain real functionality; do not add empty placeholder directories.
+
+```text
+.
+|-- module.json
+|-- README.md
+|-- AGENTS.md
+|-- scripts/
+|   |-- main.js
+|   |-- applications/
+|   |   `-- npc-generator-application.js
+|   |-- generator/
+|   |   |-- parser.js
+|   |   |-- validator.js
+|   |   `-- schema.js
+|   |-- mapping/
+|   |   |-- actor-mapper.js
+|   |   `-- item-mapper.js
+|   |-- foundry/
+|   |   |-- actor-importer.js
+|   |   |-- actor-directory.js
+|   |   `-- settings.js
+|   |-- services/
+|   |   `-- npc-import-service.js
+|   |-- utils/
+|   |   `-- logger.js
+|   `-- constants.js
+|-- templates/
+|   `-- npc-generator-application.hbs
+|-- styles/
+|   `-- npc-generator.css
+|-- lang/
+|   `-- en.json
+|-- assets/
+`-- tests/
+    |-- fixtures/
+    |-- generator/
+    `-- mapping/
+```
+
+### Directory Responsibilities
+
+- `scripts/main.js` is the composition root. It registers lifecycle hooks and connects module components, but contains no parsing, mapping, or import business logic.
+- `scripts/applications/` contains Foundry applications, dialogs, form handlers, and their view-model preparation.
+- `scripts/generator/` owns the external generator contract: parsing raw input, normalizing values, validating required fields, and describing supported generator schemas.
+- `scripts/mapping/` contains pure transformations from validated generator models to Cyberpunk RED Actor and Item source objects. Mapping code must not create or update Foundry documents.
+- `scripts/foundry/` contains direct Foundry and Cyberpunk RED system integration, including hooks, directory controls, settings registration, permissions, and Document API calls.
+- `scripts/services/` coordinates complete use cases such as validating input, mapping it, creating an Actor, creating embedded Items, and reporting the result.
+- `scripts/utils/` is reserved for small, reusable, domain-independent helpers. Do not turn it into a collection of unrelated business logic.
+- `templates/` contains Handlebars presentation templates, with one primary template per application or dialog.
+- `styles/` contains module-scoped styles. Split files by application only when the stylesheet becomes difficult to navigate.
+- `lang/` contains Foundry localization dictionaries. English is the source language.
+- `assets/` contains module-owned static images, icons, and fonts. Do not store generated character data here.
+- `tests/` mirrors the source areas under test. `tests/fixtures/` contains small, sanitized, versioned samples of generator input and expected mappings.
+
+### Dependency Direction
+
+Keep dependencies flowing toward pure domain code:
+
+```text
+applications / foundry hooks
+            |
+            v
+         services
+        /        \
+       v          v
+ generator     mapping
+                   |
+                   v
+          Foundry document sources
+```
+
+- Generator parsing and mapping must not import Foundry UI classes or access globals such as `game`, `ui`, `canvas`, or `Hooks`.
+- UI code calls services; it must not duplicate parsing, mapping, or persistence logic.
+- Services may depend on narrow Foundry adapters, but Foundry adapters must not depend on applications.
+- Avoid circular imports. If two modules require each other, extract their shared contract or helper into a lower-level module.
+- Pass dependencies explicitly where practical, especially the logger, notifier, document creator, and system-schema adapter. This keeps core behavior testable.
+
+### File and Module Conventions
+
+- Use lowercase kebab-case filenames, for example `actor-importer.js` and `npc-generator-application.hbs`.
+- Prefer one primary responsibility and one main export per file. Keep closely related small helpers private to that file.
+- Use named exports for reusable functions and classes. Reserve default exports only for framework conventions that materially benefit from them.
+- Keep module constants in `scripts/constants.js` only when they are shared. Keep feature-specific constants beside their feature.
+- Do not create barrel `index.js` files unless they simplify a stable public boundary without introducing circular dependencies.
+- Import files using explicit relative paths and file extensions. Do not depend on bundler-only aliases unless a build system is intentionally introduced.
+- Keep Foundry-relative asset and template paths centralized so renaming the package or moving assets does not require scattered string changes.
+
+### Feature Placement Workflow
+
+When adding a feature, place each part according to its responsibility:
+
+1. Define or update the external data contract in `scripts/generator/`.
+2. Add validation and normalization before any Foundry-specific work.
+3. Add pure Actor and Item transformations in `scripts/mapping/`.
+4. Coordinate the use case in `scripts/services/`.
+5. Add document persistence or Foundry hooks in `scripts/foundry/`.
+6. Add the user interaction in `scripts/applications/`, `templates/`, and `styles/`.
+7. Add localization keys in `lang/en.json` and tests with representative fixtures.
+
+Do not organize the project only by technical file type once a feature becomes large. If a feature grows beyond a few cohesive files, create a feature directory while preserving the same separation between UI, domain logic, and Foundry integration.
+
 ## Language and Front-End Best Practices
 
 ### JavaScript
