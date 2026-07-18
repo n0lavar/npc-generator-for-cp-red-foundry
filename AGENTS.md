@@ -17,6 +17,10 @@ The character data originates from [n0lavar/cp_red_npc_generator](https://github
 ## Development Guidelines
 
 - Keep all source code comments, documentation, user-facing text, commit messages, and project metadata in English.
+- Maintain the `Lessons Learned` section in this file. Add or update an entry only after the user explicitly confirms that the implemented fix works. Each entry must describe the symptom, root cause or contributing condition, confirmed fix, and prevention rule.
+- Do not record an attempted or unconfirmed fix in `Lessons Learned`. Until the user confirms the result, treat the diagnosis and solution as provisional.
+- Consult `Lessons Learned` before changing an affected area. Do not repeat a documented failure mode.
+- Record only confirmed, reusable engineering lessons. Keep entries concise, technical, and free of user-specific or sensitive information.
 - Use the Foundry VTT v12 API and the document schemas exposed by the installed Cyberpunk RED system.
 - Keep generator-specific parsing separate from Foundry document creation.
 - Validate imported data before creating or updating Foundry documents.
@@ -220,6 +224,15 @@ Do not organize the project only by technical file type once a feature becomes l
 - Prefix diagnostic messages consistently, for example `NPC Generator |`, and keep routine production logging quiet.
 - Test with a clean Foundry VTT 12 world, the supported Cyberpunk RED system, GM and player users, empty and populated Actor Directories, malformed generator input, and common module combinations.
 - Before release, verify activation, deactivation, world reload, import failure recovery, localization, permissions, and absence of console errors.
+
+## Lessons Learned
+
+### Localization Keys Displayed Instead of English Text
+
+- **Symptom:** The Actor Directory button and generator dialog displayed keys such as `npc_generator_for_cp_red_foundry.GenerateNpc` and `npc_generator_for_cp_red_foundry.HelloWorld` instead of readable labels.
+- **Contributing condition:** The module assumed its localization dictionary was available at render time. Converting the dictionary from nested objects to flat dotted keys did not resolve the problem in the running Foundry instance, so localization loading or manifest caching could still leave keys unresolved.
+- **Fix:** Keep the flat Foundry localization dictionary, but resolve UI strings through a helper that detects an unresolved key and returns an explicit English fallback. Pass resolved values into Handlebars view models instead of requiring templates to resolve critical text themselves.
+- **Prevention:** Every new user-visible string must have a localization key and a safe English fallback at the JavaScript boundary when missing localization would make the interface unreadable or unusable. Test the module with a missing or unloaded localization dictionary and verify that no raw keys are visible.
 
 ## External Project
 
