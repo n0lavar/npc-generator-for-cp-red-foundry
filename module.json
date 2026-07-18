@@ -1,0 +1,18 @@
+{
+  "id": "npc_generator_for_cp_red_foundry",
+  "title": "NPC Generator for Cyberpunk RED",
+  "description": "A minimal Foundry VTT module for Cyberpunk RED.",
+  "version": "0.1.0",
+  "authors": [
+    {
+      "name": "Module Author"
+    }
+  ],
+  "compatibility": {
+    "minimum": "12",
+    "verified": "12"
+  },
+  "esmodules": [
+    "scripts/main.js"
+  ]
+}
