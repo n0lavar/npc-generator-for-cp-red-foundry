@@ -15,6 +15,9 @@
   "esmodules": [
     "scripts/main.js"
   ],
+  "styles": [
+    "styles/npc-generator.css"
+  ],
   "languages": [
     {
       "lang": "en",

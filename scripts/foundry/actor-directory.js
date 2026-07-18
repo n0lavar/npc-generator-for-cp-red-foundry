@@ -1,4 +1,6 @@
-const MODULE_ID = "npc_generator_for_cp_red_foundry";
+import { openNpcGeneratorDialog } from "../applications/npc-generator-dialog.js";
+import { localizeOrFallback } from "../utils/localization.js";
+
 const BUTTON_CLASS = "npc-generator-generate";
 
 export function registerActorDirectoryHooks() {
@@ -28,7 +30,7 @@ function addGenerateNpcButton(html) {
   );
   button.addEventListener("click", async () => {
     try {
-      await openHelloWorldDialog();
+      await openNpcGeneratorDialog();
     } catch (error) {
       console.error("NPC Generator | Failed to open the generator dialog.", error);
       ui.notifications.error(
@@ -41,29 +43,4 @@ function addGenerateNpcButton(html) {
   });
 
   createFolderButton.before(button);
-}
-
-async function openHelloWorldDialog() {
-  const content = await renderTemplate(
-    `modules/${MODULE_ID}/templates/hello-world-dialog.hbs`,
-    { message: localizeOrFallback("HelloWorld", "Hello World") }
-  );
-
-  new Dialog({
-    title: localizeOrFallback("DialogTitle", "Generate NPC"),
-    content,
-    buttons: {
-      close: {
-        icon: '<i class="fas fa-times"></i>',
-        label: localizeOrFallback("Close", "Close")
-      }
-    },
-    default: "close"
-  }).render(true);
-}
-
-function localizeOrFallback(name, fallback) {
-  const key = `${MODULE_ID}.${name}`;
-  const localized = game.i18n.localize(key);
-  return localized === key ? fallback : localized;
 }
