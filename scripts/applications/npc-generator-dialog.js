@@ -1,4 +1,11 @@
-import { MODULE_ID } from "../constants.js";
+import { EXECUTION_MODES, MODULE_ID } from "../constants.js";
+import { getExecutionMode } from "../foundry/settings.js";
+import {
+  collectDeveloperProject,
+  getDeveloperProjectName,
+  selectDeveloperProject
+} from "../services/developer-project.js";
+import { generateNpc } from "../services/generator-service.js";
 import { localizeOrFallback } from "../utils/localization.js";
 
 const RANKS = [
@@ -56,9 +63,15 @@ const BOOLEAN_OPTIONS = [
 ];
 
 export async function openNpcGeneratorDialog() {
+  if (!game.user?.isGM) {
+    throw new Error(localizeOrFallback("OnlyGameMaster", "Only a Game Master can generate NPCs."));
+  }
+
+  const executionMode = getExecutionMode();
+  const developerProjectName = await getDeveloperProjectName();
   const content = await renderTemplate(
     `modules/${MODULE_ID}/templates/npc-generator-dialog.hbs`,
-    buildViewModel()
+    buildViewModel(executionMode, developerProjectName)
   );
 
   new Dialog(
@@ -69,16 +82,17 @@ export async function openNpcGeneratorDialog() {
         create: {
           icon: '<i class="fas fa-user-plus"></i>',
           label: localizeOrFallback("CreateActor", "Create Actor"),
-          callback: () => {}
+          callback: (html) => handleCreateActor(html, executionMode)
         }
       },
-      default: "create"
+      default: "create",
+      render: (html) => activateDeveloperProjectPicker(html)
     },
     { width: 640 }
   ).render(true);
 }
 
-function buildViewModel() {
+function buildViewModel(executionMode, developerProjectName) {
   return {
     npcCustomization: localizeOrFallback("NpcCustomization", "NPC Customization"),
     generationSettings: localizeOrFallback("GenerationSettings", "Generation settings"),
@@ -98,8 +112,75 @@ function buildViewModel() {
     modelIdLabel: localizeOrFallback("ModelId", "Model ID"),
     modelApiKeyLabel: localizeOrFallback("ModelApiKey", "Model API key"),
     modelBaseUrlLabel: localizeOrFallback("ModelBaseUrl", "Model base URL"),
-    modelLanguageLabel: localizeOrFallback("ModelLanguage", "Model language")
+    modelLanguageLabel: localizeOrFallback("ModelLanguage", "Model language"),
+    developerMode: executionMode === EXECUTION_MODES.DEVELOPER,
+    developerProjectLabel: localizeOrFallback("DeveloperProject", "Generator project"),
+    selectProjectLabel: localizeOrFallback("SelectProject", "Select project folder"),
+    developerProjectName: developerProjectName ?? localizeOrFallback("NoProjectSelected", "No project selected")
   };
+}
+
+function activateDeveloperProjectPicker(html) {
+  const button = html.find('[data-action="selectDeveloperProject"]')[0];
+  if (!button) return;
+
+  button.addEventListener("click", async () => {
+    try {
+      const projectName = await selectDeveloperProject();
+      html.find('[data-role="developerProjectName"]').text(projectName);
+    } catch (error) {
+      if (error?.name === "AbortError") return;
+      console.error("NPC Generator | Failed to select the developer project.", error);
+      ui.notifications.error(error.message);
+    }
+  });
+}
+
+async function handleCreateActor(html, executionMode) {
+  if (!game.user?.isGM) {
+    ui.notifications.error(localizeOrFallback("OnlyGameMaster", "Only a Game Master can generate NPCs."));
+    return;
+  }
+
+  const form = html.find("form")[0];
+  if (!form) throw new Error("The generator form was not found.");
+
+  ui.notifications.info(localizeOrFallback("GenerationStarted", "NPC generation started."));
+
+  try {
+    const execution = { mode: executionMode };
+    if (executionMode === EXECUTION_MODES.DEVELOPER) {
+      Object.assign(execution, await collectDeveloperProject());
+    }
+
+    const resultJson = await generateNpc(readGenerationOptions(form), execution);
+    const result = JSON.parse(resultJson);
+    console.log("NPC Generator | Generated NPC", result);
+    ui.notifications.info(localizeOrFallback("GenerationComplete", "NPC generation complete. See the console."));
+  } catch (error) {
+    console.error("NPC Generator | NPC generation failed.", error);
+    ui.notifications.error(
+      localizeOrFallback("GenerationFailed", "NPC generation failed. See the console.")
+    );
+  }
+}
+
+function readGenerationOptions(form) {
+  const formData = new FormData(form);
+  const options = Object.fromEntries(
+    [...formData.entries()].map(([name, value]) => [name.replaceAll("-", "_"), value])
+  );
+
+  for (const [name] of BOOLEAN_OPTIONS) {
+    options[name.replaceAll("-", "_")] = formData.has(name);
+  }
+
+  options.seed = Number.parseInt(options.seed, 10) || 0;
+  for (const name of ["nationality", "model_id", "model_api_key", "model_base_url"]) {
+    if (options[name] === "") options[name] = null;
+  }
+
+  return options;
 }
 
 function buildRankOptions() {

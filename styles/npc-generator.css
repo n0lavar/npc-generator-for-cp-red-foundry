@@ -49,6 +49,17 @@
   margin: 0;
 }
 
+.npc-generator-project-picker {
+  align-items: center;
+  display: flex;
+  gap: 0.75rem;
+  justify-content: space-between;
+}
+
+.npc-generator-project-picker [data-role="developerProjectName"] {
+  overflow-wrap: anywhere;
+}
+
 @media (max-width: 560px) {
   .npc-generator-form .form-group,
   .npc-generator-checkboxes {

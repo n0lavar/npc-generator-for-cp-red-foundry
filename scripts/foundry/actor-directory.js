@@ -10,6 +10,7 @@ export function registerActorDirectoryHooks() {
 }
 
 function addGenerateNpcButton(html) {
+  if (!game.user?.isGM) return;
   if (html.find(`.${BUTTON_CLASS}`).length > 0) return;
 
   const createFolderButton = html.find("button.create-folder").first();

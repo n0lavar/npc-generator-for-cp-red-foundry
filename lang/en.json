@@ -25,5 +25,16 @@
   "npc_generator_for_cp_red_foundry.ModelApiKey": "Model API key",
   "npc_generator_for_cp_red_foundry.ModelBaseUrl": "Model base URL",
   "npc_generator_for_cp_red_foundry.ModelLanguage": "Model language",
+  "npc_generator_for_cp_red_foundry.OnlyGameMaster": "Only a Game Master can generate NPCs.",
+  "npc_generator_for_cp_red_foundry.ExecutionMode": "Execution mode",
+  "npc_generator_for_cp_red_foundry.ExecutionModeHint": "Use the bundled generator or load a local Python project for development.",
+  "npc_generator_for_cp_red_foundry.BundledMode": "Bundled",
+  "npc_generator_for_cp_red_foundry.DeveloperMode": "Developer",
+  "npc_generator_for_cp_red_foundry.DeveloperProject": "Generator project",
+  "npc_generator_for_cp_red_foundry.SelectProject": "Select project folder",
+  "npc_generator_for_cp_red_foundry.NoProjectSelected": "No project selected",
+  "npc_generator_for_cp_red_foundry.GenerationStarted": "NPC generation started.",
+  "npc_generator_for_cp_red_foundry.GenerationComplete": "NPC generation complete. See the console.",
+  "npc_generator_for_cp_red_foundry.GenerationFailed": "NPC generation failed. See the console.",
   "npc_generator_for_cp_red_foundry.DialogError": "The NPC generator dialog could not be opened."
 }
