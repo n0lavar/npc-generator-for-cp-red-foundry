@@ -1,10 +1,6 @@
 import { EXECUTION_MODES, MODULE_ID } from "../constants.js";
 import { getExecutionMode } from "../foundry/settings.js";
-import {
-  collectDeveloperProject,
-  getDeveloperProjectName,
-  selectDeveloperProject
-} from "../services/developer-project.js";
+import { collectDeveloperProject } from "../services/developer-project.js";
 import { generateNpc } from "../services/generator-service.js";
 import { localizeOrFallback } from "../utils/localization.js";
 
@@ -68,10 +64,9 @@ export async function openNpcGeneratorDialog() {
   }
 
   const executionMode = getExecutionMode();
-  const developerProjectName = await getDeveloperProjectName();
   const content = await renderTemplate(
     `modules/${MODULE_ID}/templates/npc-generator-dialog.hbs`,
-    buildViewModel(executionMode, developerProjectName)
+    buildViewModel()
   );
 
   new Dialog(
@@ -85,14 +80,13 @@ export async function openNpcGeneratorDialog() {
           callback: (html) => handleCreateActor(html, executionMode)
         }
       },
-      default: "create",
-      render: (html) => activateDeveloperProjectPicker(html)
+      default: "create"
     },
     { width: 640 }
   ).render(true);
 }
 
-function buildViewModel(executionMode, developerProjectName) {
+function buildViewModel() {
   return {
     npcCustomization: localizeOrFallback("NpcCustomization", "NPC Customization"),
     generationSettings: localizeOrFallback("GenerationSettings", "Generation settings"),
@@ -112,28 +106,8 @@ function buildViewModel(executionMode, developerProjectName) {
     modelIdLabel: localizeOrFallback("ModelId", "Model ID"),
     modelApiKeyLabel: localizeOrFallback("ModelApiKey", "Model API key"),
     modelBaseUrlLabel: localizeOrFallback("ModelBaseUrl", "Model base URL"),
-    modelLanguageLabel: localizeOrFallback("ModelLanguage", "Model language"),
-    developerMode: executionMode === EXECUTION_MODES.DEVELOPER,
-    developerProjectLabel: localizeOrFallback("DeveloperProject", "Generator project"),
-    selectProjectLabel: localizeOrFallback("SelectProject", "Select project folder"),
-    developerProjectName: developerProjectName ?? localizeOrFallback("NoProjectSelected", "No project selected")
+    modelLanguageLabel: localizeOrFallback("ModelLanguage", "Model language")
   };
-}
-
-function activateDeveloperProjectPicker(html) {
-  const button = html.find('[data-action="selectDeveloperProject"]')[0];
-  if (!button) return;
-
-  button.addEventListener("click", async () => {
-    try {
-      const projectName = await selectDeveloperProject();
-      html.find('[data-role="developerProjectName"]').text(projectName);
-    } catch (error) {
-      if (error?.name === "AbortError") return;
-      console.error("NPC Generator | Failed to select the developer project.", error);
-      ui.notifications.error(error.message);
-    }
-  });
 }
 
 async function handleCreateActor(html, executionMode) {

@@ -1,4 +1,5 @@
 import { EXECUTION_MODES, MODULE_ID } from "../constants.js";
+import { DeveloperProjectSettings } from "../applications/developer-project-settings.js";
 import { localizeOrFallback } from "../utils/localization.js";
 
 export function registerSettings() {
@@ -16,6 +17,18 @@ export function registerSettings() {
       [EXECUTION_MODES.DEVELOPER]: localizeOrFallback("DeveloperMode", "Developer")
     },
     default: EXECUTION_MODES.BUNDLED
+  });
+
+  game.settings.registerMenu(MODULE_ID, "developerProject", {
+    name: localizeOrFallback("DeveloperProject", "Generator project"),
+    hint: localizeOrFallback(
+      "DeveloperProjectHint",
+      "Select the local cp_red_npc_generator project used in Developer mode."
+    ),
+    label: localizeOrFallback("SelectProject", "Select project folder"),
+    icon: "fas fa-folder-open",
+    type: DeveloperProjectSettings,
+    restricted: true
   });
 }
 
