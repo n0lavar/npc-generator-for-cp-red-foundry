@@ -1,62 +1,14 @@
 import { EXECUTION_MODES, MODULE_ID } from "../constants.js";
 import { getExecutionMode } from "../foundry/settings.js";
 import { collectDeveloperProject } from "../services/developer-project.js";
-import { generateNpc } from "../services/generator-service.js";
+import {
+  generateNpc,
+  getGenerationOptions,
+  isGeneratorWorkerReady
+} from "../services/generator-service.js";
 import { localizeOrFallback } from "../utils/localization.js";
 
-const RANKS = [
-  "private",
-  "corporal",
-  "lieutenant",
-  "captain",
-  "lieutenant_colonel",
-  "lieutenant_general",
-  "general"
-];
-
-const ROLES = [
-  "rockerboy",
-  "solo",
-  "netrunner",
-  "tech",
-  "medtech",
-  "media",
-  "exec",
-  "lawman",
-  "fixer",
-  "nomad",
-  "civilian"
-];
-
-const NATIONALITIES = [
-  "en_US", "es_MX", "ja_JP", "zh_CN", "ru_RU", "vi_VN", "es_CO",
-  "pt_BR", "ko_KR", "id_ID", "es_CA", "fr_CA", "es_AR", "de_DE",
-  "en_GB", "es_CL", "en_PK", "fr_FR", "uk_UA", "it_IT", "es_ES",
-  "bn_BD", "pl_PL", "en_IN", "gu_IN", "hi_IN", "mr_IN", "or_IN",
-  "ta_IN", "en_NZ", "tr_TR", "en_TH", "th_TH", "nl_NL", "zu_ZA",
-  "pt_PT", "ne_NP", "ro_RO", "fa_IR", "sv_SE", "de_AT", "en_KE",
-  "cs_CZ", "uz_UZ", "el_GR", "tw_GH", "hu_HU", "da_DK", "no_NO",
-  "ar_SA", "fi_FI", "bg_BG", "az_AZ", "he_IL", "sk_SK", "en_NG",
-  "ha_NG", "ig_NG", "yo_NG", "fr_BE", "nl_BE", "de_CH", "fr_CH",
-  "hr_HR", "ka_GE", "en_IE", "ga_IE", "lt_LT", "hy_AM", "ar_DZ",
-  "fr_DZ", "lv_LV", "sl_SI", "et_EE", "ar_PS", "mk_MK", "de_LU",
-  "is_IS", "de_LI", "zh_TW"
-];
-
-const BOOLEAN_OPTIONS = [
-  ["allow-non-basic-ammo", "Allow non-basic ammunition", true],
-  ["allow-grenades", "Allow grenades", true],
-  ["allow-armor", "Allow armor", true],
-  ["allow-cyberware", "Allow cyberware", true],
-  ["allow-borgware", "Allow borgware", false],
-  ["allow-drugs", "Allow drugs", true],
-  ["allow-equipment", "Allow equipment", true],
-  ["allow-money", "Allow money", true],
-  ["allow-junk", "Allow junk", true],
-  ["allow-melee-weapon", "Allow melee weapons", true],
-  ["allow-ranged-weapon", "Allow ranged weapons", true],
-  ["allow-martial-arts", "Allow martial arts", true]
-];
+const VISIBLE_GROUPS = ["NPC Customization", "Generation settings"];
 
 export async function openNpcGeneratorDialog() {
   if (!game.user?.isGM) {
@@ -64,9 +16,11 @@ export async function openNpcGeneratorDialog() {
   }
 
   const executionMode = getExecutionMode();
+  const options = await getGenerationOptions(await buildExecution(executionMode));
+  const visibleFields = options.fields.filter((field) => VISIBLE_GROUPS.includes(field.group));
   const content = await renderTemplate(
     `modules/${MODULE_ID}/templates/npc-generator-dialog.hbs`,
-    buildViewModel()
+    buildViewModel(visibleFields)
   );
 
   new Dialog(
@@ -77,7 +31,7 @@ export async function openNpcGeneratorDialog() {
         create: {
           icon: '<i class="fas fa-user-plus"></i>',
           label: localizeOrFallback("CreateActor", "Create Actor"),
-          callback: (html) => handleCreateActor(html, executionMode)
+          callback: (html) => handleCreateActor(html, executionMode, visibleFields)
         }
       },
       default: "create"
@@ -86,31 +40,50 @@ export async function openNpcGeneratorDialog() {
   ).render(true);
 }
 
-function buildViewModel() {
+function buildViewModel(fields) {
   return {
-    npcCustomization: localizeOrFallback("NpcCustomization", "NPC Customization"),
-    generationSettings: localizeOrFallback("GenerationSettings", "Generation settings"),
-    rankLabel: localizeOrFallback("Rank", "Rank"),
-    roleLabel: localizeOrFallback("Role", "Role"),
-    nationalityLabel: localizeOrFallback("Nationality", "Nationality"),
-    randomLabel: localizeOrFallback("Random", "Random"),
-    ranks: buildRankOptions(),
-    roles: ROLES.map((value) => ({ value, label: humanize(value), selected: value === "solo" })),
-    nationalities: NATIONALITIES.map((value) => ({ value, label: value })),
-    booleanOptions: BOOLEAN_OPTIONS.map(([name, fallback, checked]) => ({
-      name,
-      label: localizeOrFallback(toLocalizationName(name), fallback),
-      checked
-    })),
-    seedLabel: localizeOrFallback("Seed", "Seed"),
-    modelIdLabel: localizeOrFallback("ModelId", "Model ID"),
-    modelApiKeyLabel: localizeOrFallback("ModelApiKey", "Model API key"),
-    modelBaseUrlLabel: localizeOrFallback("ModelBaseUrl", "Model base URL"),
-    modelLanguageLabel: localizeOrFallback("ModelLanguage", "Model language")
+    groups: VISIBLE_GROUPS.map((group) => ({
+      label: group,
+      fields: fields.filter((field) => field.group === group).map(buildFieldViewModel)
+    }))
   };
 }
 
-async function handleCreateActor(html, executionMode) {
+function buildFieldViewModel(field) {
+  const choices = field.name === "rank"
+    ? field.choices?.filter((choice) => !/^\d+$/.test(String(choice)))
+    : field.choices;
+  const nullable = field.default === null;
+
+  return {
+    ...field,
+    id: field.name.replaceAll("_", "-"),
+    label: humanize(field.name),
+    checked: field.default === true,
+    hasChoices: Boolean(choices?.length),
+    choices: choices?.map((choice) => ({
+      value: choice,
+      label: humanize(String(choice)),
+      selected: choice === field.default
+    })),
+    nullable,
+    nullSelected: nullable,
+    randomLabel: localizeOrFallback("Random", "Random"),
+    integer: field.type === "int",
+    password: field.name.includes("api_key"),
+    inputType: getInputType(field),
+    value: field.default ?? ""
+  };
+}
+
+function getInputType(field) {
+  if (field.type === "int") return "number";
+  if (field.name.includes("api_key")) return "password";
+  if (field.name.includes("url")) return "url";
+  return "text";
+}
+
+async function handleCreateActor(html, executionMode, fields) {
   if (!game.user?.isGM) {
     ui.notifications.error(localizeOrFallback("OnlyGameMaster", "Only a Game Master can generate NPCs."));
     return;
@@ -122,12 +95,10 @@ async function handleCreateActor(html, executionMode) {
   ui.notifications.info(localizeOrFallback("GenerationStarted", "NPC generation started."));
 
   try {
-    const execution = { mode: executionMode };
-    if (executionMode === EXECUTION_MODES.DEVELOPER) {
-      Object.assign(execution, await collectDeveloperProject());
-    }
-
-    const resultJson = await generateNpc(readGenerationOptions(form), execution);
+    const resultJson = await generateNpc(
+      readGenerationOptions(form, fields),
+      await buildExecution(executionMode)
+    );
     const result = JSON.parse(resultJson);
     console.log("NPC Generator | Generated NPC", result);
     ui.notifications.info(localizeOrFallback("GenerationComplete", "NPC generation complete. See the console."));
@@ -139,30 +110,27 @@ async function handleCreateActor(html, executionMode) {
   }
 }
 
-function readGenerationOptions(form) {
+function readGenerationOptions(form, fields) {
   const formData = new FormData(form);
-  const options = Object.fromEntries(
-    [...formData.entries()].map(([name, value]) => [name.replaceAll("-", "_"), value])
-  );
+  return Object.fromEntries(fields.map((field) => {
+    if (field.boolean) return [field.name, formData.has(field.name)];
 
-  for (const [name] of BOOLEAN_OPTIONS) {
-    options[name.replaceAll("-", "_")] = formData.has(name);
-  }
-
-  options.seed = Number.parseInt(options.seed, 10) || 0;
-  for (const name of ["nationality", "model_id", "model_api_key", "model_base_url"]) {
-    if (options[name] === "") options[name] = null;
-  }
-
-  return options;
+    const value = formData.get(field.name);
+    if (value === "" && field.default === null) return [field.name, null];
+    if (field.type === "int") return [field.name, Number.parseInt(value, 10)];
+    return [field.name, value];
+  }));
 }
 
-function buildRankOptions() {
-  return RANKS.map((value) => ({
-    value,
-    label: humanize(value),
-    selected: value === "captain"
-  }));
+async function buildExecution(executionMode) {
+  const execution = { mode: executionMode };
+  if (
+    executionMode === EXECUTION_MODES.DEVELOPER
+    && !isGeneratorWorkerReady(executionMode)
+  ) {
+    Object.assign(execution, await collectDeveloperProject());
+  }
+  return execution;
 }
 
 function humanize(value) {
@@ -170,11 +138,4 @@ function humanize(value) {
     .split("_")
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(" ");
-}
-
-function toLocalizationName(value) {
-  return value
-    .split("-")
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join("");
 }

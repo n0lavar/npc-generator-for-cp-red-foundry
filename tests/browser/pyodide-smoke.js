@@ -5,29 +5,21 @@ try {
   status.textContent = "Initializing Pyodide...";
   await callWorker("initialize", { mode: "bundled" });
 
+  status.textContent = "Reading generation options...";
+  const options = JSON.parse(await callWorker("getGenerationOptions", null));
+  const generationOptions = Object.fromEntries(
+    options.fields
+      .filter((field) => ["NPC Customization", "Generation settings"].includes(field.group))
+      .map((field) => [field.name, field.default])
+  );
+  generationOptions.seed = 123;
+  generationOptions.nationality = "en_US";
+  generationOptions.model_id = null;
+  generationOptions.model_api_key = null;
+  generationOptions.model_base_url = null;
+
   status.textContent = "Generating NPC...";
-  const resultJson = await callWorker("generate", {
-    rank: "captain",
-    role: "solo",
-    nationality: "en_US",
-    allow_non_basic_ammo: true,
-    allow_grenades: true,
-    allow_armor: true,
-    allow_cyberware: true,
-    allow_borgware: false,
-    allow_drugs: true,
-    allow_equipment: true,
-    allow_money: true,
-    allow_junk: true,
-    allow_melee_weapon: true,
-    allow_ranged_weapon: true,
-    allow_martial_arts: true,
-    seed: 123,
-    model_id: null,
-    model_api_key: null,
-    model_base_url: null,
-    model_language: "English"
-  });
+  const resultJson = await callWorker("generate", generationOptions);
 
   const result = JSON.parse(resultJson);
   if (!result.name || !result.stats || !result.inventory) {

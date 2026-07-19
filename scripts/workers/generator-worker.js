@@ -33,6 +33,12 @@ self.addEventListener("message", async (event) => {
       return;
     }
 
+    if (type === "getGenerationOptions") {
+      const result = await getGenerationOptions();
+      self.postMessage({ id, result });
+      return;
+    }
+
     throw new Error(`Unsupported worker message: ${type}`);
   } catch (error) {
     self.postMessage({
@@ -126,5 +132,29 @@ json.dumps(
     ensure_ascii=False,
     default=lambda value: value.item() if isinstance(value, numpy.generic) else str(value),
 )
+`);
+}
+
+async function getGenerationOptions() {
+  if (!initializedMode) throw new Error("The generator worker is not initialized.");
+
+  return pyodide.runPythonAsync(`
+import json
+from cp_red_npc_generator import get_generation_options
+
+json.dumps({
+    "fields": [
+        {
+            "name": option.name,
+            "help": option.help,
+            "type": option.type.__name__ if option.type else None,
+            "choices": option.choices,
+            "default": option.default,
+            "group": option.group,
+            "boolean": option.boolean,
+        }
+        for option in get_generation_options().fields
+    ]
+}, ensure_ascii=False)
 `);
 }

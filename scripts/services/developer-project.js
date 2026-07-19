@@ -1,3 +1,5 @@
+import { resetGeneratorWorker } from "./generator-service.js";
+
 const DATABASE_NAME = "npc-generator-for-cp-red-foundry";
 const STORE_NAME = "file-system-handles";
 const HANDLE_KEY = "generator-project";
@@ -24,6 +26,7 @@ export async function selectDeveloperProject() {
     mode: "read"
   });
   await storeHandle(cachedHandle);
+  resetGeneratorWorker();
   return cachedHandle.name;
 }
 
@@ -33,16 +36,31 @@ export async function getDeveloperProjectName() {
 }
 
 export async function collectDeveloperProject() {
-  const handle = await getStoredHandle();
-  if (!handle) throw new Error("Select the generator project directory first.");
+  let handle = await getStoredHandle();
+  if (!handle) {
+    await selectDeveloperProject();
+    handle = cachedHandle;
+  }
 
-  const permission = await handle.queryPermission({ mode: "read" });
+  let permission = await handle.queryPermission({ mode: "read" });
+  if (permission === "prompt") {
+    permission = await handle.requestPermission({ mode: "read" });
+  }
+
   if (permission !== "granted") {
-    throw new Error("Access to the generator project directory is not granted.");
+    await selectDeveloperProject();
+    handle = cachedHandle;
   }
 
   const files = [];
-  await collectDirectory(handle, "", files);
+  try {
+    await collectDirectory(handle, "", files);
+  } catch (error) {
+    if (error?.name === "NotAllowedError") {
+      throw new Error("Access to the selected generator project directory was denied.");
+    }
+    throw error;
+  }
 
   if (files.length === 0) {
     throw new Error("The selected generator project does not contain supported source files.");

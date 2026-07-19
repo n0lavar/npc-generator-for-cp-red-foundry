@@ -31,6 +31,30 @@
   width: 100%;
 }
 
+.npc-generator-select-field,
+.npc-generator-checkbox-field {
+  align-items: start;
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: minmax(14rem, 1fr) minmax(16rem, 2fr);
+  margin-bottom: 0.75rem;
+}
+
+.npc-generator-field-control {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.npc-generator-field-control select {
+  width: 100%;
+}
+
+.npc-generator-select-field .notes,
+.npc-generator-checkbox-field .notes {
+  margin: 0;
+}
+
 .npc-generator-checkboxes {
   display: grid;
   gap: 0.35rem 1rem;
@@ -38,15 +62,21 @@
   margin-top: 0.75rem;
 }
 
-.npc-generator-checkboxes .checkbox {
+.npc-generator-form .checkbox {
   align-items: center;
   display: flex;
   gap: 0.5rem;
+  margin-bottom: 0.35rem;
 }
 
-.npc-generator-checkboxes input[type="checkbox"] {
+.npc-generator-form .checkbox input[type="checkbox"] {
   flex: 0 0 auto;
   margin: 0;
+}
+
+.npc-generator-form .form-group .notes {
+  grid-column: 2;
+  margin: -0.5rem 0 0;
 }
 
 .npc-generator-project-picker {
@@ -62,7 +92,13 @@
 
 @media (max-width: 560px) {
   .npc-generator-form .form-group,
+  .npc-generator-select-field,
+  .npc-generator-checkbox-field,
   .npc-generator-checkboxes {
     grid-template-columns: 1fr;
+  }
+
+  .npc-generator-form .form-group .notes {
+    grid-column: 1;
   }
 }

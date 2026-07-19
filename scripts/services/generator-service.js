@@ -2,45 +2,61 @@ import { MODULE_ID } from "../constants.js";
 
 const WORKER_URL = `modules/${MODULE_ID}/scripts/workers/generator-worker.js`;
 
-let bundledWorker;
-let bundledInitialization;
+let generatorWorker;
+let workerInitialization;
+let workerMode;
 let generationQueue = Promise.resolve();
 
 export async function generateNpc(options, execution) {
-  const run = () => execution.mode === "bundled"
-    ? generateWithBundledWorker(options, execution)
-    : generateWithEphemeralWorker(options, execution);
+  return enqueueWorkerCommand("generate", options, execution);
+}
+
+export async function getGenerationOptions(execution) {
+  const result = await enqueueWorkerCommand("getGenerationOptions", null, execution);
+  return JSON.parse(result);
+}
+
+function enqueueWorkerCommand(command, payload, execution) {
+  const run = () => runWithPersistentWorker(command, payload, execution);
 
   const generation = generationQueue.then(run, run);
   generationQueue = generation.catch(() => undefined);
   return generation;
 }
 
-async function generateWithBundledWorker(options, execution) {
-  if (!bundledWorker) {
-    bundledWorker = new Worker(WORKER_URL, { type: "module" });
-    bundledInitialization = callWorker(bundledWorker, "initialize", execution)
+async function runWithPersistentWorker(command, payload, execution) {
+  if (generatorWorker && workerMode !== execution.mode) {
+    resetGeneratorWorker();
+  }
+
+  if (!generatorWorker) {
+    generatorWorker = new Worker(WORKER_URL, { type: "module" });
+    workerMode = execution.mode;
+    workerInitialization = callWorker(
+      generatorWorker,
+      "initialize",
+      execution,
+      execution.transfer ?? []
+    )
       .catch((error) => {
-        bundledWorker?.terminate();
-        bundledWorker = undefined;
-        bundledInitialization = undefined;
+        resetGeneratorWorker();
         throw error;
       });
   }
 
-  await bundledInitialization;
-  return callWorker(bundledWorker, "generate", options);
+  await workerInitialization;
+  return callWorker(generatorWorker, command, payload);
 }
 
-async function generateWithEphemeralWorker(options, execution) {
-  const worker = new Worker(WORKER_URL, { type: "module" });
+export function resetGeneratorWorker() {
+  generatorWorker?.terminate();
+  generatorWorker = undefined;
+  workerInitialization = undefined;
+  workerMode = undefined;
+}
 
-  try {
-    await callWorker(worker, "initialize", execution, execution.transfer ?? []);
-    return await callWorker(worker, "generate", options);
-  } finally {
-    worker.terminate();
-  }
+export function isGeneratorWorkerReady(mode) {
+  return Boolean(generatorWorker && workerInitialization && workerMode === mode);
 }
 
 function callWorker(worker, type, payload, transfer = []) {

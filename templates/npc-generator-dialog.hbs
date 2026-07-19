@@ -1,72 +1,49 @@
 <form class="npc-generator-form">
-  <fieldset>
-    <legend>{{npcCustomization}}</legend>
+  {{#each groups}}
+    <fieldset>
+      <legend>{{label}}</legend>
 
-    <div class="form-group">
-      <label for="npc-generator-rank">{{rankLabel}}</label>
-      <select id="npc-generator-rank" name="rank">
-        {{#each ranks}}
-          <option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>
-        {{/each}}
-      </select>
-    </div>
-
-    <div class="form-group">
-      <label for="npc-generator-role">{{roleLabel}}</label>
-      <select id="npc-generator-role" name="role">
-        {{#each roles}}
-          <option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>
-        {{/each}}
-      </select>
-    </div>
-
-    <div class="form-group">
-      <label for="npc-generator-nationality">{{nationalityLabel}}</label>
-      <select id="npc-generator-nationality" name="nationality">
-        <option value="" selected>{{randomLabel}}</option>
-        {{#each nationalities}}
-          <option value="{{value}}">{{label}}</option>
-        {{/each}}
-      </select>
-    </div>
-
-    <div class="npc-generator-checkboxes">
-      {{#each booleanOptions}}
-        <label class="checkbox">
-          <input type="checkbox" name="{{name}}" {{#if checked}}checked{{/if}}>
-          <span>{{label}}</span>
-        </label>
+      {{#each fields}}
+        {{#if boolean}}
+          <div class="npc-generator-checkbox-field">
+            <label class="checkbox">
+              <input type="checkbox" name="{{name}}" {{#if checked}}checked{{/if}}>
+              <span>{{label}}</span>
+            </label>
+            <p class="notes">{{help}}</p>
+          </div>
+        {{else}}
+          {{#if hasChoices}}
+            <div class="npc-generator-select-field">
+              <div class="npc-generator-field-control">
+                <label for="npc-generator-{{id}}">{{label}}</label>
+              <select id="npc-generator-{{id}}" name="{{name}}">
+                {{#if nullable}}
+                  <option value="" {{#if nullSelected}}selected{{/if}}>{{randomLabel}}</option>
+                {{/if}}
+                {{#each choices}}
+                  <option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>
+                {{/each}}
+              </select>
+              </div>
+              <p class="notes">{{help}}</p>
+            </div>
+          {{else}}
+            <div class="form-group" title="{{help}}">
+              <label for="npc-generator-{{id}}">{{label}}</label>
+              <input
+                id="npc-generator-{{id}}"
+                name="{{name}}"
+                type="{{inputType}}"
+                value="{{value}}"
+                {{#if integer}}step="1"{{/if}}
+                {{#if password}}autocomplete="off"{{/if}}
+              >
+              <p class="notes">{{help}}</p>
+            </div>
+          {{/if}}
+        {{/if}}
       {{/each}}
-    </div>
-  </fieldset>
-
-  <fieldset>
-    <legend>{{generationSettings}}</legend>
-
-    <div class="form-group">
-      <label for="npc-generator-seed">{{seedLabel}}</label>
-      <input id="npc-generator-seed" name="seed" type="number" value="0" step="1">
-    </div>
-
-    <div class="form-group">
-      <label for="npc-generator-model-id">{{modelIdLabel}}</label>
-      <input id="npc-generator-model-id" name="model-id" type="text" value="qwen/qwen3.6-35b-a3b">
-    </div>
-
-    <div class="form-group">
-      <label for="npc-generator-model-api-key">{{modelApiKeyLabel}}</label>
-      <input id="npc-generator-model-api-key" name="model-api-key" type="password" value="lm-studio" autocomplete="off">
-    </div>
-
-    <div class="form-group">
-      <label for="npc-generator-model-base-url">{{modelBaseUrlLabel}}</label>
-      <input id="npc-generator-model-base-url" name="model-base-url" type="url" value="http://localhost:1234/v1">
-    </div>
-
-    <div class="form-group">
-      <label for="npc-generator-model-language">{{modelLanguageLabel}}</label>
-      <input id="npc-generator-model-language" name="model-language" type="text" value="English">
-    </div>
-  </fieldset>
-
+    </fieldset>
+  {{/each}}
 </form>
