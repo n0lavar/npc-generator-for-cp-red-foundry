@@ -19,9 +19,10 @@ GM-only execution modes:
 
 The first generation in a Foundry session downloads Pyodide and Python
 dependencies, so it requires an internet connection and can take noticeably
-longer than subsequent generations. For now, **Create Actor** generates an NPC
-and writes the resulting object to the browser console; Foundry Actor creation
-is not yet implemented.
+longer than subsequent generations. **Create Actor** writes the generated object
+to the browser console and creates a Cyberpunk RED character Actor. The Actor
+name combines the generated name and surname. Stats and embedded skills are
+matched by name and updated from the generated values.
 
 ## LM Studio and CORS
 

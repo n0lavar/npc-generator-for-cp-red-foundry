@@ -1,5 +1,6 @@
 import { EXECUTION_MODES, MODULE_ID } from "../constants.js";
 import { getExecutionMode } from "../foundry/settings.js";
+import { createActorFromNpc } from "../foundry/actor-importer.js";
 import { collectDeveloperProject } from "../services/developer-project.js";
 import {
   generateNpc,
@@ -101,7 +102,11 @@ async function handleCreateActor(html, executionMode, fields) {
     );
     const result = JSON.parse(resultJson);
     console.log("NPC Generator | Generated NPC", result);
-    ui.notifications.info(localizeOrFallback("GenerationComplete", "NPC generation complete. See the console."));
+    const actor = await createActorFromNpc(result);
+    ui.notifications.info(
+      localizeOrFallback("ActorCreated", "Actor created: {name}")
+        .replace("{name}", actor.name)
+    );
   } catch (error) {
     console.error("NPC Generator | NPC generation failed.", error);
     ui.notifications.error(
