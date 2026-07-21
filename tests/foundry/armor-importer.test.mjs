@@ -3,7 +3,7 @@ import test from "node:test";
 
 import { createAndEquipArmor } from "../../scripts/foundry/armor-importer.js";
 
-test("clones system armor, equips it, and tracks its location", async () => {
+test("clones armor from an additional module compendium and tracks its location", async () => {
   const compendiumSource = {
     _id: "compendium-id",
     name: "Light Armorjack (Body)",
@@ -18,6 +18,8 @@ test("clones system armor, equips it, and tracks its location", async () => {
     }
   };
   const pack = {
+    documentName: "Item",
+    collection: "additional-module.armor",
     async getIndex() {
       return [{ _id: "compendium-id", name: compendiumSource.name, type: "armor" }];
     },
@@ -25,7 +27,7 @@ test("clones system armor, equips it, and tracks its location", async () => {
       return { toObject: () => structuredClone(compendiumSource) };
     }
   };
-  globalThis.game = { packs: new Map([["cyberpunk-red-core.core_armor", pack]]) };
+  globalThis.game = { packs: new Map([["additional-module.armor", pack]]) };
 
   const tracked = [];
   const actor = {

@@ -176,6 +176,15 @@ from cp_red_npc_generator.utils import load_data, package_resource
 def item_names(path):
     return [entry["name"] for entry in load_data(path)]
 
+def weapon_entries(path):
+    return [
+        {
+            "name": entry["name"],
+            "beautiful_names_by_quality": entry.get("beautiful_names_by_quality", {}),
+        }
+        for entry in load_data(path)
+    ]
+
 ammo = load_data("configs/items/ammo.json")
 ammo_names = [
     f"{ammo_type} ({modification})"
@@ -193,7 +202,7 @@ catalog = {
     "skills": list(load_data("configs/skills.json")),
     "items": {
         "Armor": item_names("configs/items/armor.json"),
-        "Weapons": item_names("configs/items/weapon.json"),
+        "Weapons": weapon_entries("configs/items/weapon.json"),
         "Ammo": ammo_names,
         "Cyberware": cyberware_names,
         "Equipment": item_names("configs/items/equipment.json"),

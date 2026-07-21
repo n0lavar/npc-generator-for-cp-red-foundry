@@ -248,6 +248,13 @@ Do not organize the project only by technical file type once a feature becomes l
 - **Fix:** Resolve armor by its exact Developer mode name in `cyberpunk-red-core.core_armor`, clone the complete Item source into the Actor, set it to equipped, and explicitly call `updateTrackedArmor()` for every covered location.
 - **Prevention:** Import system-owned equipment from the appropriate Cyberpunk RED compendium so icons, effects, metadata, and schema defaults are preserved. When changing state programmatically, inspect and reproduce all supported lifecycle actions normally performed by the system UI.
 
+### Equipment Lookup Was Restricted to Core Compendium Packs
+
+- **Symptom:** Armor and weapon imports could not find matching Items supplied by additional installed modules.
+- **Root cause:** Importers searched hard-coded Cyberpunk RED core pack IDs instead of all available Item compendiums.
+- **Fix:** Build armor and weapon lookup indexes from every available Item compendium, regardless of its package or folder, and use the same global index for compatibility checks.
+- **Prevention:** Never restrict generated equipment lookup to known core pack IDs. Filter globally indexed compendium entries by Item type and name so compatible module-provided content remains discoverable.
+
 ## External Project
 
 Generator repository: <https://github.com/n0lavar/cp_red_npc_generator>

@@ -1,9 +1,10 @@
 import {
   buildActorName,
-  buildSkillUpdates,
   buildStatUpdate
 } from "../mapping/actor-mapper.js";
 import { createAndEquipArmor } from "./armor-importer.js";
+import { importSkills } from "./skill-importer.js";
+import { createWeapons } from "./weapon-importer.js";
 
 const ACTOR_TYPE = "character";
 
@@ -17,20 +18,19 @@ export async function createActorFromNpc(npc) {
 
   try {
     const statMapping = buildStatUpdate(actor.system.stats, npc.stats);
-    const skillMapping = buildSkillUpdates(actor.itemTypes.skill, npc.skills);
+    const skillResult = await importSkills(actor, npc.skills);
 
     if (Object.keys(statMapping.update).length > 0) {
       await actor.update(statMapping.update);
     }
     await initializeDerivedResources(actor);
-    if (skillMapping.updates.length > 0) {
-      await actor.updateEmbeddedDocuments("Item", skillMapping.updates);
-    }
     const armorResult = await createAndEquipArmor(actor, npc.armor);
+    const weaponResult = await createWeapons(actor, npc.weapons);
 
     reportUnmatchedNames("stats", statMapping.unmatched);
-    reportUnmatchedNames("skills", skillMapping.unmatched);
+    reportUnmatchedNames("skills", skillResult.unmatched);
     reportUnmatchedNames("armor", armorResult.unmatched);
+    reportUnmatchedNames("weapons", weaponResult.unmatched);
     return actor;
   } catch (error) {
     await actor.delete();

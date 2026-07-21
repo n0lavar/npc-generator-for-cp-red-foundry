@@ -1,6 +1,5 @@
 import { buildArmorImportRequests } from "../mapping/item-mapper.js";
-
-const CORE_ARMOR_PACK_ID = "cyberpunk-red-core.core_armor";
+import { collectCompendiumItemEntries } from "./item-compendium.js";
 
 export async function createAndEquipArmor(actor, generatedArmor) {
   const mapping = buildArmorImportRequests(generatedArmor);
@@ -8,27 +7,20 @@ export async function createAndEquipArmor(actor, generatedArmor) {
     return { unmatched: mapping.unmatched };
   }
 
-  const pack = game.packs.get(CORE_ARMOR_PACK_ID);
-  if (!pack) {
-    throw new Error(`The Cyberpunk RED armor compendium is unavailable: ${CORE_ARMOR_PACK_ID}`);
-  }
-
-  const index = await pack.getIndex({ fields: ["name", "type"] });
   const armorByName = new Map(
-    index
-      .filter((entry) => entry.type === "armor")
-      .map((entry) => [entry.name, entry])
+    (await collectCompendiumItemEntries(["armor"]))
+      .map((match) => [match.entry.name, match])
   );
   const sources = [];
 
   for (const request of mapping.requests) {
-    const entry = armorByName.get(request.name);
-    if (!entry) {
+    const match = armorByName.get(request.name);
+    if (!match) {
       mapping.unmatched.push(request.name);
       continue;
     }
 
-    const armorDocument = await pack.getDocument(entry._id);
+    const armorDocument = await match.pack.getDocument(match.entry._id);
     const source = armorDocument.toObject();
     delete source._id;
     source.system.equipped = "equipped";

@@ -1,9 +1,14 @@
 import { normalizeDocumentName } from "../mapping/actor-mapper.js";
+import { buildWeaponNameCandidates } from "../mapping/item-mapper.js";
+import { collectCompendiumItemEntries } from "../foundry/item-compendium.js";
 import { getCompatibilityCatalog } from "./generator-service.js";
 
 export async function checkCompatibility(execution) {
   const catalog = await getCompatibilityCatalog(execution);
   const documents = await collectItemDocuments();
+  const equipmentEntries = await collectCompendiumItemEntries(["armor", "weapon"]);
+  const armorNames = getEntryNames(equipmentEntries, "armor");
+  const weaponNames = getEntryNames(equipmentEntries, "weapon");
   const statNames = getCharacterStatNames();
   const skillNames = documents
     .filter((document) => document.type === "skill")
@@ -17,9 +22,43 @@ export async function checkCompatibility(execution) {
     skills: buildResult(catalog.skills, skillNames),
     items: Object.entries(catalog.items).map(([name, expected]) => ({
       name,
-      ...buildResult(expected, itemNames)
+      ...(name === "Weapons"
+        ? buildWeaponResult(expected, weaponNames)
+        : buildResult(expected, name === "Armor" ? armorNames : itemNames))
     }))
   };
+}
+
+function getEntryNames(matches, type) {
+  return matches
+    .filter((match) => match.entry.type === type)
+    .map((match) => match.entry.name);
+}
+
+export function buildWeaponResult(weapons, availableNames) {
+  const available = new Set(availableNames.map(normalizeDocumentName));
+  const missing = weapons
+    .filter((weapon) => !weaponCanBeMatched(weapon, available))
+    .map((weapon) => weapon.name);
+
+  return {
+    found: weapons.length - missing.length,
+    total: weapons.length,
+    missingCount: missing.length,
+    missing
+  };
+}
+
+function weaponCanBeMatched(weapon, available) {
+  const beautifulNames = weapon.beautiful_names_by_quality ?? {};
+  return ["poor", "standard", "excellent"].every((quality) => {
+    const candidates = buildWeaponNameCandidates({
+      name: weapon.name,
+      beautifulName: beautifulNames[quality],
+      quality
+    });
+    return candidates.some((candidate) => available.has(normalizeDocumentName(candidate)));
+  });
 }
 
 function buildResult(expectedNames, availableNames) {

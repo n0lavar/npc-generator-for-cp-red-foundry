@@ -29,7 +29,10 @@ longer than subsequent generations. **Create Actor** writes the generated object
 to the browser console and creates a Cyberpunk RED character Actor. The Actor
 name combines the generated name and surname. Stats and embedded skills are
 matched by name and updated from the generated values. Generated armor is
-created as embedded Armor items and equipped immediately.
+created as embedded Armor items and equipped immediately. Generated weapons are
+resolved by their branded or generic quality-aware names across all available
+Item compendiums, cloned as embedded Weapon items, and equipped. Armor lookup
+also searches every available Item compendium, including packs from modules.
 
 ## LM Studio and CORS
 
