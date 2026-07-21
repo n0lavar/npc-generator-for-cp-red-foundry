@@ -10,6 +10,12 @@ The current scaffold adds a **Generate NPC** button to the Actor Directory,
 between the **Create Actor** and **Create Folder** controls. The button opens an
 NPC customization and generation settings dialog.
 
+On first use, the module copies `settings.example.json` to a persistent browser
+file named `settings.json`. Its values become the defaults in the Generate NPC
+dialog, and changes made in the dialog are written back to that file. The file
+is stored in the browser's origin-private file system because Foundry modules
+cannot write into their installed module directory at runtime.
+
 The generator runs in a Web Worker through Pyodide. The module provides two
 GM-only execution modes:
 

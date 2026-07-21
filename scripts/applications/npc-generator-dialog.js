@@ -7,6 +7,11 @@ import {
   getGenerationOptions,
   isGeneratorWorkerReady
 } from "../services/generator-service.js";
+import {
+  applyGenerationSettings,
+  loadGenerationSettings,
+  saveGenerationSettings
+} from "../services/generation-settings.js";
 import { localizeOrFallback } from "../utils/localization.js";
 
 const VISIBLE_GROUPS = ["NPC Customization", "Generation settings"];
@@ -18,7 +23,13 @@ export async function openNpcGeneratorDialog() {
 
   const executionMode = getExecutionMode();
   const options = await getGenerationOptions(await buildExecution(executionMode));
-  const visibleFields = options.fields.filter((field) => VISIBLE_GROUPS.includes(field.group));
+  const settings = await loadGenerationSettings();
+  const fields = options.fields.map((field) => ({
+    ...field,
+    nullable: field.default === null
+  }));
+  const visibleFields = applyGenerationSettings(fields, settings)
+    .filter((field) => VISIBLE_GROUPS.includes(field.group));
   const content = await renderTemplate(
     `modules/${MODULE_ID}/templates/npc-generator-dialog.hbs`,
     buildViewModel(visibleFields)
@@ -35,7 +46,8 @@ export async function openNpcGeneratorDialog() {
           callback: (html) => handleCreateActor(html, executionMode, visibleFields)
         }
       },
-      default: "create"
+      default: "create",
+      render: (html) => registerSettingsPersistence(html, visibleFields)
     },
     { width: 640 }
   ).render(true);
@@ -54,7 +66,7 @@ function buildFieldViewModel(field) {
   const choices = field.name === "rank"
     ? field.choices?.filter((choice) => !/^\d+$/.test(String(choice)))
     : field.choices;
-  const nullable = field.default === null;
+  const nullable = field.nullable;
 
   return {
     ...field,
@@ -96,8 +108,10 @@ async function handleCreateActor(html, executionMode, fields) {
   ui.notifications.info(localizeOrFallback("GenerationStarted", "NPC generation started."));
 
   try {
+    const generationOptions = readGenerationOptions(form, fields);
+    await saveGenerationSettings(generationOptions);
     const resultJson = await generateNpc(
-      readGenerationOptions(form, fields),
+      generationOptions,
       await buildExecution(executionMode)
     );
     const result = JSON.parse(resultJson);
@@ -115,13 +129,33 @@ async function handleCreateActor(html, executionMode, fields) {
   }
 }
 
+function registerSettingsPersistence(html, fields) {
+  const form = html.find("form")[0];
+  if (!form) return;
+
+  let saveTimer;
+  form.addEventListener("change", () => {
+    window.clearTimeout(saveTimer);
+    saveTimer = window.setTimeout(async () => {
+      try {
+        await saveGenerationSettings(readGenerationOptions(form, fields));
+      } catch (error) {
+        console.error("NPC Generator | Failed to save generation settings.", error);
+        ui.notifications.error(
+          localizeOrFallback("SettingsSaveFailed", "Generation settings could not be saved.")
+        );
+      }
+    }, 150);
+  });
+}
+
 function readGenerationOptions(form, fields) {
   const formData = new FormData(form);
   return Object.fromEntries(fields.map((field) => {
     if (field.boolean) return [field.name, formData.has(field.name)];
 
     const value = formData.get(field.name);
-    if (value === "" && field.default === null) return [field.name, null];
+    if (value === "" && field.nullable) return [field.name, null];
     if (field.type === "int") return [field.name, Number.parseInt(value, 10)];
     return [field.name, value];
   }));

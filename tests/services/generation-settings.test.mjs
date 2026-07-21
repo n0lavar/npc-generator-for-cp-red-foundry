@@ -1,0 +1,37 @@
+import assert from "node:assert/strict";
+import {
+  applyGenerationSettings,
+  mergeGenerationSettings
+} from "../../scripts/services/generation-settings.js";
+
+const fields = [
+  { name: "rank", default: "mook" },
+  { name: "allow_description", default: false },
+  { name: "unconfigured", default: 7 }
+];
+
+assert.deepEqual(
+  applyGenerationSettings(fields, {
+    rank: "captain",
+    "allow-description": true
+  }),
+  [
+    { name: "rank", default: "captain" },
+    { name: "allow_description", default: true },
+    { name: "unconfigured", default: 7 }
+  ]
+);
+assert.equal(fields[0].default, "mook", "input fields must not be mutated");
+
+assert.deepEqual(
+  mergeGenerationSettings(
+    { rank: "captain", "allow-description": true, "log-level": "INFO" },
+    { rank: "mook", allow_description: false, seed: 42 }
+  ),
+  {
+    rank: "mook",
+    "allow-description": false,
+    "log-level": "INFO",
+    seed: 42
+  }
+);
