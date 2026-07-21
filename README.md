@@ -28,7 +28,11 @@ dependencies, so it requires an internet connection and can take noticeably
 longer than subsequent generations. **Create Actor** writes the generated object
 to the browser console and creates a Cyberpunk RED character Actor. The Actor
 name combines the generated name and surname. Stats and embedded skills are
-matched by name and updated from the generated values. Generated armor is
+matched by name and updated from the generated values. Generated cyberware is
+resolved by exact name across all available Item compendiums. Core cyberware
+already created by the system is reused, while other implants are cloned and
+installed into their generated parent through the Cyberpunk RED system API;
+paired or repeated implants remain separate items. Generated armor is
 created as embedded Armor items and equipped immediately. Generated weapons are
 resolved by their branded or generic quality-aware names across all available
 Item compendiums, cloned as embedded Weapon items, and equipped. Armor lookup

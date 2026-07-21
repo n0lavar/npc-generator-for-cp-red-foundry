@@ -28,6 +28,19 @@ The character data originates from [n0lavar/cp_red_npc_generator](https://github
 - Avoid relying on private Foundry or game-system APIs when a supported public API is available.
 - Keep `module.json` compatible with Foundry VTT 12 and ensure its `id` matches the module directory name.
 
+### Mandatory Lessons Learned Gate
+
+The `Lessons Learned` section is an enforceable project constraint, not optional background information. Apply this gate to every diagnosis, implementation, refactor, review, and test change:
+
+1. Before inspecting external or historical implementations, read every existing `Lessons Learned` entry and identify which entries apply to the affected area.
+2. Before editing files, state the applicable prevention rules in the working notes or user update and use them to constrain the investigation and implementation.
+3. Use evidence sources in the order required by the applicable lessons. In particular, for generator contracts, inspect the current Developer mode source and representative output before the bundled wheel, cached data, historical examples, or inferred formats.
+4. Do not implement a fallback, compatibility path, or workaround that contradicts a prevention rule. Historical or bundled-format compatibility requires an explicit user request even when it appears harmless.
+5. Before declaring work complete, compare the final diff and tests against every applicable prevention rule. Correct any conflict first and report which lessons governed the result.
+6. If a user request conflicts with a confirmed lesson, stop and explain the conflict before making the change. Proceed only after the user explicitly confirms the exception.
+
+Failing this gate means the task is incomplete, even if the code compiles and all automated tests pass.
+
 ## Project Structure Guidelines
 
 Use the following structure as the module grows. Create directories only when they contain real functionality; do not add empty placeholder directories.

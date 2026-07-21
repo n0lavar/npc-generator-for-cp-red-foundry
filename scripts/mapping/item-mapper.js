@@ -15,6 +15,64 @@ export function buildArmorImportRequests(generatedArmor) {
   return { requests, unmatched };
 }
 
+const CYBERWARE_STRUCTURAL_CONTAINERS = new Set([
+  "Meatbody",
+  "Neuralware",
+  "Eye Sockets",
+  "Auditory System",
+  "Shoulders",
+  "Hips",
+  "Borgware"
+]);
+
+const CYBERWARE_NAME_MAPPINGS = new Map([
+  ["Fashionware", "Fashionware (7 Option Slots)"],
+  ["Internal Cyberware", "Internal (7 Option Slots)"],
+  ["External Cyberware", "External (7 Option Slots)"]
+]);
+
+export function buildCyberwareImportRequests(generatedCyberware) {
+  const requests = [];
+  const unmatched = [];
+
+  if (generatedCyberware == null) return { requests, unmatched };
+  if (!Array.isArray(generatedCyberware)) {
+    return { requests, unmatched: ["[invalid cyberware root]"] };
+  }
+
+  for (const root of generatedCyberware) {
+    visitCyberwareNode(root, requests, unmatched, null);
+  }
+  return { requests, unmatched };
+}
+
+function visitCyberwareNode(node, requests, unmatched, parentIndex) {
+  if (!node || typeof node !== "object") return;
+
+  const name = cleanName(node.item?.name);
+  let childParentIndex = parentIndex;
+  if (name && !CYBERWARE_STRUCTURAL_CONTAINERS.has(name)) {
+    childParentIndex = requests.length;
+    requests.push({
+      name,
+      candidates: [CYBERWARE_NAME_MAPPINGS.get(name) ?? name],
+      parentIndex
+    });
+  } else if (node.item && !name) {
+    unmatched.push(String(node.item?.name ?? node.item));
+  }
+
+  if (node.children == null) return;
+  if (!Array.isArray(node.children)) {
+    unmatched.push(name || "[invalid cyberware tree]");
+    return;
+  }
+
+  for (const child of node.children) {
+    visitCyberwareNode(child, requests, unmatched, childParentIndex);
+  }
+}
+
 export function buildAmmoImportRequests(generatedInventory) {
   const requests = [];
   const unmatched = [];

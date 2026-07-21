@@ -6,6 +6,7 @@ import { createAndEquipArmor } from "./armor-importer.js";
 import { createAmmo } from "./ammo-importer.js";
 import { importSkills } from "./skill-importer.js";
 import { createWeapons } from "./weapon-importer.js";
+import { createCyberware } from "./cyberware-importer.js";
 
 const ACTOR_TYPE = "character";
 
@@ -25,12 +26,14 @@ export async function createActorFromNpc(npc) {
       await actor.update(statMapping.update);
     }
     await initializeDerivedResources(actor);
+    const cyberwareResult = await createCyberware(actor, npc.cyberware);
     const armorResult = await createAndEquipArmor(actor, npc.armor);
     const weaponResult = await createWeapons(actor, npc.weapons);
     const ammoResult = await createAmmo(actor, npc.inventory);
 
     reportUnmatchedNames("stats", statMapping.unmatched);
     reportUnmatchedNames("skills", skillResult.unmatched);
+    reportUnmatchedNames("cyberware", cyberwareResult.unmatched);
     reportUnmatchedNames("armor", armorResult.unmatched);
     reportUnmatchedNames("weapons", weaponResult.unmatched);
     reportUnmatchedNames("ammo", ammoResult.unmatched);

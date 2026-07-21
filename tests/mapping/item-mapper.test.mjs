@@ -4,8 +4,80 @@ import test from "node:test";
 import {
   buildAmmoImportRequests,
   buildArmorImportRequests,
+  buildCyberwareImportRequests,
   buildWeaponImportRequests
 } from "../../scripts/mapping/item-mapper.js";
+
+test("flattens the Developer mode cyberware root array", () => {
+  const result = buildCyberwareImportRequests([{
+    item: { name: "Cybereye" },
+    children: [
+      { item: { name: "Low Light / Infrared / UV" }, children: [] }
+    ]
+  }, {
+    item: { name: "Eye Sockets" },
+    children: [{
+      item: { name: "Eye Sockets" },
+      children: [
+        { item: { name: "Cybereye" }, children: [{ item: { name: "Low Light / Infrared / UV" }, children: [] }] }
+      ]
+    }]
+  }]);
+
+  assert.deepEqual(result, {
+    requests: [
+      { name: "Cybereye", candidates: ["Cybereye"], parentIndex: null },
+      { name: "Low Light / Infrared / UV", candidates: ["Low Light / Infrared / UV"], parentIndex: 0 },
+      { name: "Cybereye", candidates: ["Cybereye"], parentIndex: null },
+      { name: "Low Light / Infrared / UV", candidates: ["Low Light / Infrared / UV"], parentIndex: 2 }
+    ],
+    unmatched: []
+  });
+});
+
+test("reports malformed cyberware nodes without discarding valid siblings", () => {
+  const result = buildCyberwareImportRequests([{
+    item: { name: "Meatbody" },
+    children: [
+      { item: {}, children: [] },
+      { item: { name: "Neural Link" }, children: [] }
+    ]
+  }]);
+
+  assert.deepEqual(result, {
+    requests: [{ name: "Neural Link", candidates: ["Neural Link"], parentIndex: null }],
+    unmatched: ["[object Object]"]
+  });
+});
+
+test("rejects the historical single-root cyberware contract", () => {
+  const result = buildCyberwareImportRequests({
+    item: { name: "Cybereye" },
+    children: []
+  });
+
+  assert.deepEqual(result, {
+    requests: [],
+    unmatched: ["[invalid cyberware root]"]
+  });
+});
+
+test("maps renamed Developer mode cyberware containers to current Foundry names", () => {
+  const result = buildCyberwareImportRequests([
+    { item: { name: "Fashionware" }, children: [] },
+    { item: { name: "Internal Cyberware" }, children: [] },
+    { item: { name: "External Cyberware" }, children: [] }
+  ]);
+
+  assert.deepEqual(result, {
+    requests: [
+      { name: "Fashionware", candidates: ["Fashionware (7 Option Slots)"], parentIndex: null },
+      { name: "Internal Cyberware", candidates: ["Internal (7 Option Slots)"], parentIndex: null },
+      { name: "External Cyberware", candidates: ["External (7 Option Slots)"], parentIndex: null }
+    ],
+    unmatched: []
+  });
+});
 
 test("builds ammo requests only from typed inventory entries", () => {
   const result = buildAmmoImportRequests([
