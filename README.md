@@ -28,7 +28,8 @@ dependencies, so it requires an internet connection and can take noticeably
 longer than subsequent generations. **Create Actor** writes the generated object
 to the browser console and creates a Cyberpunk RED character Actor. The Actor
 name combines the generated name and surname. Stats and embedded skills are
-matched by name and updated from the generated values.
+matched by name and updated from the generated values. Generated armor is
+created as embedded Armor items and equipped immediately.
 
 ## LM Studio and CORS
 

@@ -234,6 +234,20 @@ Do not organize the project only by technical file type once a feature becomes l
 - **Fix:** Keep the flat Foundry localization dictionary, but resolve UI strings through a helper that detects an unresolved key and returns an explicit English fallback. Pass resolved values into Handlebars view models instead of requiring templates to resolve critical text themselves.
 - **Prevention:** Every new user-visible string must have a localization key and a safe English fallback at the JavaScript boundary when missing localization would make the interface unreadable or unusable. Test the module with a missing or unloaded localization dictionary and verify that no raw keys are visible.
 
+### Bundled Generator Contract Differed from Developer Mode
+
+- **Symptom:** Generated armor was reported as unmatched because the importer expected `Head: Light Armorjack`, while Developer mode produced `Light Armorjack (Head)`.
+- **Root cause:** The importer contract was inferred from the bundled generator wheel instead of the generator source selected by Developer mode.
+- **Fix:** Parse the Developer mode armor format, where the equipment location is a parenthesized suffix.
+- **Prevention:** Before implementing or changing generator parsing, inspect the current Developer mode source and representative output. Treat that contract as authoritative; do not add compatibility for bundled or historical formats unless explicitly required.
+
+### Programmatically Created Armor Was Incomplete and Not Tracked
+
+- **Symptom:** Imported armor displayed Foundry's generic bag icon and an empty tracking star even though its equip state was set to `equipped`.
+- **Root cause:** The importer constructed a minimal Armor source instead of cloning the matching Cyberpunk RED compendium Item. Directly setting `system.equipped` also bypassed the character sheet transition that calls `updateTrackedArmor()`.
+- **Fix:** Resolve armor by its exact Developer mode name in `cyberpunk-red-core.core_armor`, clone the complete Item source into the Actor, set it to equipped, and explicitly call `updateTrackedArmor()` for every covered location.
+- **Prevention:** Import system-owned equipment from the appropriate Cyberpunk RED compendium so icons, effects, metadata, and schema defaults are preserved. When changing state programmatically, inspect and reproduce all supported lifecycle actions normally performed by the system UI.
+
 ## External Project
 
 Generator repository: <https://github.com/n0lavar/cp_red_npc_generator>

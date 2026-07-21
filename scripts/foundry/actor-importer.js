@@ -3,6 +3,7 @@ import {
   buildSkillUpdates,
   buildStatUpdate
 } from "../mapping/actor-mapper.js";
+import { createAndEquipArmor } from "./armor-importer.js";
 
 const ACTOR_TYPE = "character";
 
@@ -25,9 +26,11 @@ export async function createActorFromNpc(npc) {
     if (skillMapping.updates.length > 0) {
       await actor.updateEmbeddedDocuments("Item", skillMapping.updates);
     }
+    const armorResult = await createAndEquipArmor(actor, npc.armor);
 
     reportUnmatchedNames("stats", statMapping.unmatched);
     reportUnmatchedNames("skills", skillMapping.unmatched);
+    reportUnmatchedNames("armor", armorResult.unmatched);
     return actor;
   } catch (error) {
     await actor.delete();
