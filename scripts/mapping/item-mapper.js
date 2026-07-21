@@ -9,10 +9,42 @@ export function buildArmorImportRequests(generatedArmor) {
       continue;
     }
 
-    requests.push({ name });
+    requests.push({ name, candidates: [name] });
   }
 
   return { requests, unmatched };
+}
+
+export function buildAmmoImportRequests(generatedInventory) {
+  const requests = [];
+  const unmatched = [];
+
+  for (const entry of generatedInventory ?? []) {
+    if (entry?.item?.type !== "ammo") continue;
+
+    const name = cleanName(entry.item.name);
+    const amount = Number(entry.amount);
+    if (!name || !Number.isInteger(amount) || amount <= 0) {
+      unmatched.push(name || String(entry?.item?.name ?? entry));
+      continue;
+    }
+
+    requests.push({ name, candidates: buildAmmoNameCandidates(name), amount });
+  }
+
+  return { requests, unmatched };
+}
+
+export function buildAmmoNameCandidates(name) {
+  const cleanedName = cleanName(name);
+  const candidates = [cleanedName];
+  const match = cleanedName.match(/^(.+?)\s*\((.+)\)$/u);
+
+  if (match && normalizeForComparison(match[1]) === normalizeForComparison(match[2])) {
+    candidates.push(match[1].trim());
+  }
+
+  return candidates.filter(Boolean);
 }
 
 const WEAPON_QUALITIES = new Set(["poor", "standard", "excellent"]);
@@ -59,4 +91,8 @@ export function buildWeaponNameCandidates({ name, beautifulName, quality }) {
 
 function cleanName(value) {
   return typeof value === "string" ? value.trim() : "";
+}
+
+function normalizeForComparison(value) {
+  return value.normalize("NFKD").replace(/[^\p{L}\p{N}]/gu, "").toLowerCase();
 }

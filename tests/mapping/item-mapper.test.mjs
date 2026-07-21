@@ -2,9 +2,22 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  buildAmmoImportRequests,
   buildArmorImportRequests,
   buildWeaponImportRequests
 } from "../../scripts/mapping/item-mapper.js";
+
+test("builds ammo requests only from typed inventory entries", () => {
+  const result = buildAmmoImportRequests([
+    { item: { name: "Rifle (Basic)", type: "ammo" }, amount: 30 },
+    { item: { name: "Agent", type: "equipment" }, amount: 1 }
+  ]);
+
+  assert.deepEqual(result, {
+    requests: [{ name: "Rifle (Basic)", candidates: ["Rifle (Basic)"], amount: 30 }],
+    unmatched: []
+  });
+});
 
 test("preserves Developer mode armor names for exact compendium lookup", () => {
   const result = buildArmorImportRequests([
@@ -14,8 +27,14 @@ test("preserves Developer mode armor names for exact compendium lookup", () => {
 
   assert.deepEqual(result, {
     requests: [
-      { name: "Light Armorjack (Body)" },
-      { name: "Light Armorjack (Head)" }
+      {
+        name: "Light Armorjack (Body)",
+        candidates: ["Light Armorjack (Body)"]
+      },
+      {
+        name: "Light Armorjack (Head)",
+        candidates: ["Light Armorjack (Head)"]
+      }
     ],
     unmatched: []
   });

@@ -1,5 +1,5 @@
 import { buildArmorImportRequests } from "../mapping/item-mapper.js";
-import { collectCompendiumItemEntries } from "./item-compendium.js";
+import { buildCompendiumItemSources } from "./compendium-item-importer.js";
 
 export async function createAndEquipArmor(actor, generatedArmor) {
   const mapping = buildArmorImportRequests(generatedArmor);
@@ -7,35 +7,19 @@ export async function createAndEquipArmor(actor, generatedArmor) {
     return { unmatched: mapping.unmatched };
   }
 
-  const armorByName = new Map(
-    (await collectCompendiumItemEntries(["armor"]))
-      .map((match) => [match.entry.name, match])
-  );
-  const sources = [];
-
-  for (const request of mapping.requests) {
-    const match = armorByName.get(request.name);
-    if (!match) {
-      mapping.unmatched.push(request.name);
-      continue;
-    }
-
-    const armorDocument = await match.pack.getDocument(match.entry._id);
-    const source = armorDocument.toObject();
-    delete source._id;
+  const result = await buildCompendiumItemSources("armor", mapping.requests, (source) => {
     source.system.equipped = "equipped";
-    sources.push(source);
-  }
+  });
 
-  const createdArmor = sources.length > 0
-    ? await actor.createEmbeddedDocuments("Item", sources)
+  const createdArmor = result.sources.length > 0
+    ? await actor.createEmbeddedDocuments("Item", result.sources)
     : [];
 
   for (const armor of createdArmor) {
     await trackEquippedArmor(actor, armor);
   }
 
-  return { unmatched: mapping.unmatched };
+  return { unmatched: [...mapping.unmatched, ...result.unmatched] };
 }
 
 async function trackEquippedArmor(actor, armor) {

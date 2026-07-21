@@ -3,6 +3,7 @@ import {
   buildStatUpdate
 } from "../mapping/actor-mapper.js";
 import { createAndEquipArmor } from "./armor-importer.js";
+import { createAmmo } from "./ammo-importer.js";
 import { importSkills } from "./skill-importer.js";
 import { createWeapons } from "./weapon-importer.js";
 
@@ -26,11 +27,13 @@ export async function createActorFromNpc(npc) {
     await initializeDerivedResources(actor);
     const armorResult = await createAndEquipArmor(actor, npc.armor);
     const weaponResult = await createWeapons(actor, npc.weapons);
+    const ammoResult = await createAmmo(actor, npc.inventory);
 
     reportUnmatchedNames("stats", statMapping.unmatched);
     reportUnmatchedNames("skills", skillResult.unmatched);
     reportUnmatchedNames("armor", armorResult.unmatched);
     reportUnmatchedNames("weapons", weaponResult.unmatched);
+    reportUnmatchedNames("ammo", ammoResult.unmatched);
     return actor;
   } catch (error) {
     await actor.delete();

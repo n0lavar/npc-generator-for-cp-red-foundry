@@ -33,6 +33,9 @@ created as embedded Armor items and equipped immediately. Generated weapons are
 resolved by their branded or generic quality-aware names across all available
 Item compendiums, cloned as embedded Weapon items, and equipped. Armor lookup
 also searches every available Item compendium, including packs from modules.
+Generated inventory entries whose generator type is `ammo` are resolved through
+the same global compendium lookup, cloned as embedded Ammo items, and assigned
+the quantity generated for the NPC.
 
 ## LM Studio and CORS
 

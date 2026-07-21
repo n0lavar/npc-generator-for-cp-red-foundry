@@ -1,5 +1,5 @@
 import { normalizeDocumentName } from "../mapping/actor-mapper.js";
-import { buildWeaponNameCandidates } from "../mapping/item-mapper.js";
+import { buildAmmoNameCandidates, buildWeaponNameCandidates } from "../mapping/item-mapper.js";
 import { collectCompendiumItemEntries } from "../foundry/item-compendium.js";
 import { getCompatibilityCatalog } from "./generator-service.js";
 
@@ -16,6 +16,9 @@ export async function checkCompatibility(execution) {
   const itemNames = documents
     .filter((document) => document.type !== "skill")
     .map((document) => document.name);
+  const ammoNames = documents
+    .filter((document) => document.type === "ammo")
+    .map((document) => document.name);
 
   return {
     stats: buildResult(catalog.stats, statNames),
@@ -24,8 +27,24 @@ export async function checkCompatibility(execution) {
       name,
       ...(name === "Weapons"
         ? buildWeaponResult(expected, weaponNames)
-        : buildResult(expected, name === "Armor" ? armorNames : itemNames))
+        : name === "Ammo"
+          ? buildAmmoResult(expected, ammoNames)
+          : buildResult(expected, name === "Armor" ? armorNames : itemNames))
     }))
+  };
+}
+
+export function buildAmmoResult(ammoNames, availableNames) {
+  const available = new Set(availableNames.map(normalizeDocumentName));
+  const uniqueExpected = [...new Set(ammoNames)];
+  const missing = uniqueExpected.filter((name) => !buildAmmoNameCandidates(name)
+    .some((candidate) => available.has(normalizeDocumentName(candidate))));
+
+  return {
+    found: uniqueExpected.length - missing.length,
+    total: uniqueExpected.length,
+    missingCount: missing.length,
+    missing
   };
 }
 

@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { buildWeaponResult } from "../../scripts/services/compatibility-service.js";
+import { buildAmmoResult, buildWeaponResult } from "../../scripts/services/compatibility-service.js";
+import { buildAmmoNameCandidates } from "../../scripts/mapping/item-mapper.js";
 
 test("checks every weapon quality with the same candidate fallbacks as import", () => {
   const result = buildWeaponResult([{
@@ -32,4 +33,22 @@ test("reports a weapon when any quality has no matching candidate", () => {
   }], ["Dai Lung Streetmaster (poor)", "Federated Arms X-9mm (standard)"]);
 
   assert.deepEqual(result.missing, ["Medium Pistol"]);
+});
+
+test("matches special ammo whose generated type repeats its compendium name", () => {
+  const result = buildAmmoResult(
+    ["Net (Net)", "MagnaSlot BatteryBrick (MagnaSlot BatteryBrick)"],
+    ["Net", "MagnaSlot BatteryBrick"]
+  );
+
+  assert.deepEqual(result, {
+    found: 2,
+    total: 2,
+    missingCount: 0,
+    missing: []
+  });
+});
+
+test("does not strip a meaningful ammo modification", () => {
+  assert.deepEqual(buildAmmoNameCandidates("Rifle (Basic)"), ["Rifle (Basic)"]);
 });
