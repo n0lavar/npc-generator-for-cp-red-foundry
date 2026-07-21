@@ -1,0 +1,22 @@
+<div class="npc-generator-compatibility-report">
+  <section>
+    <h2>{{statsLabel}}</h2>
+    <p>{{stats.summary}}</p>
+    {{#if stats.missing.length}}<ul>{{#each stats.missing}}<li>{{this}}</li>{{/each}}</ul>{{/if}}
+  </section>
+
+  <section>
+    <h2>{{skillsLabel}}</h2>
+    <p>{{skills.summary}}</p>
+    {{#if skills.missing.length}}<ul>{{#each skills.missing}}<li>{{this}}</li>{{/each}}</ul>{{/if}}
+  </section>
+
+  <section>
+    <h2>{{itemsLabel}}</h2>
+    {{#each items}}
+      <h3>{{name}}</h3>
+      <p>{{summary}}</p>
+      {{#if missing.length}}<ul>{{#each missing}}<li>{{this}}</li>{{/each}}</ul>{{/if}}
+    {{/each}}
+  </section>
+</div>

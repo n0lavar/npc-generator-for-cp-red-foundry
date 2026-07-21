@@ -39,6 +39,12 @@ self.addEventListener("message", async (event) => {
       return;
     }
 
+    if (type === "getCompatibilityCatalog") {
+      const result = await getCompatibilityCatalog();
+      self.postMessage({ id, result });
+      return;
+    }
+
     throw new Error(`Unsupported worker message: ${type}`);
   } catch (error) {
     self.postMessage({
@@ -128,7 +134,7 @@ from cp_red_npc_generator import GenerationRules, generate_npc
 generation_options = json.loads(generation_options_json)
 npc = await generate_npc(GenerationRules(**generation_options))
 json.dumps(
-    npc.to_dict_foundry_vvt(),
+    npc.to_dict(),
     ensure_ascii=False,
     default=lambda value: value.item() if isinstance(value, numpy.generic) else str(value),
 )
@@ -156,5 +162,46 @@ json.dumps({
         for option in get_generation_options().fields
     ]
 }, ensure_ascii=False)
+`);
+}
+
+async function getCompatibilityCatalog() {
+  if (!initializedMode) throw new Error("The generator worker is not initialized.");
+
+  return pyodide.runPythonAsync(`
+import json
+from cp_red_npc_generator.stats import StatType
+from cp_red_npc_generator.utils import load_data, package_resource
+
+def item_names(path):
+    return [entry["name"] for entry in load_data(path)]
+
+ammo = load_data("configs/items/ammo.json")
+ammo_names = [
+    f"{ammo_type} ({modification})"
+    for modification, data in ammo.items()
+    for ammo_type in data["types"]
+]
+
+cyberware_names = []
+for resource in package_resource("items/cyberware").iterdir():
+    if resource.name.endswith(".json"):
+        cyberware_names.extend(entry["name"] for entry in json.loads(resource.read_text(encoding="utf-8")))
+
+catalog = {
+    "stats": [stat.name for stat in StatType],
+    "skills": list(load_data("configs/skills.json")),
+    "items": {
+        "Armor": item_names("configs/items/armor.json"),
+        "Weapons": item_names("configs/items/weapon.json"),
+        "Ammo": ammo_names,
+        "Cyberware": cyberware_names,
+        "Equipment": item_names("configs/items/equipment.json"),
+        "Drugs": item_names("configs/items/drugs.json"),
+        "Junk": item_names("configs/items/junk.json"),
+    },
+}
+
+json.dumps(catalog, ensure_ascii=False)
 `);
 }

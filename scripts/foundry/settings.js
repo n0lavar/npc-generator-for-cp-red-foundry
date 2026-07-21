@@ -1,5 +1,6 @@
 import { EXECUTION_MODES, MODULE_ID } from "../constants.js";
 import { DeveloperProjectSettings } from "../applications/developer-project-settings.js";
+import { CompatibilityCheck } from "../applications/compatibility-check.js";
 import { localizeOrFallback } from "../utils/localization.js";
 
 export function registerSettings() {
@@ -28,6 +29,18 @@ export function registerSettings() {
     label: localizeOrFallback("SelectProject", "Select project folder"),
     icon: "fas fa-folder-open",
     type: DeveloperProjectSettings,
+    restricted: true
+  });
+
+  game.settings.registerMenu(MODULE_ID, "compatibilityCheck", {
+    name: localizeOrFallback("CheckCompatibility", "Check compatibility"),
+    hint: localizeOrFallback(
+      "CheckCompatibilityHint",
+      "Compare generator stats, skills, and item names with documents available in Foundry."
+    ),
+    label: localizeOrFallback("CheckCompatibility", "Check compatibility"),
+    icon: "fas fa-vial",
+    type: CompatibilityCheck,
     restricted: true
   });
 }

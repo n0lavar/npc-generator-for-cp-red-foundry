@@ -16,6 +16,11 @@ export async function getGenerationOptions(execution) {
   return JSON.parse(result);
 }
 
+export async function getCompatibilityCatalog(execution) {
+  const result = await enqueueWorkerCommand("getCompatibilityCatalog", null, execution);
+  return JSON.parse(result);
+}
+
 function enqueueWorkerCommand(command, payload, execution) {
   const run = () => runWithPersistentWorker(command, payload, execution);
 

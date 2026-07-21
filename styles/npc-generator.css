@@ -90,6 +90,24 @@
   overflow-wrap: anywhere;
 }
 
+.npc-generator-compatibility-report {
+  max-height: 65vh;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+}
+
+.npc-generator-compatibility-report section + section {
+  border-top: 1px solid var(--color-border-light-tertiary);
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+}
+
+.npc-generator-compatibility-report h2,
+.npc-generator-compatibility-report h3,
+.npc-generator-compatibility-report p {
+  margin-bottom: 0.35rem;
+}
+
 @media (max-width: 560px) {
   .npc-generator-form .form-group,
   .npc-generator-select-field,

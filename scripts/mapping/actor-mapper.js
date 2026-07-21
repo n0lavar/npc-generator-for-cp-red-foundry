@@ -16,7 +16,7 @@ export function buildStatUpdate(actorStats, generatedStats) {
   const unmatched = [];
 
   for (const [generatedName, value] of Object.entries(generatedStats ?? {})) {
-    const actorStatName = availableStats.get(normalizeName(generatedName));
+    const actorStatName = availableStats.get(normalizeDocumentName(generatedName));
     if (!actorStatName) {
       unmatched.push(generatedName);
       continue;
@@ -33,13 +33,13 @@ export function buildStatUpdate(actorStats, generatedStats) {
 
 export function buildSkillUpdates(actorSkills, generatedSkills) {
   const availableSkills = new Map(
-    (actorSkills ?? []).map((skill) => [normalizeName(skill.name), skill])
+    (actorSkills ?? []).map((skill) => [normalizeDocumentName(skill.name), skill])
   );
   const updates = [];
   const unmatched = [];
 
   for (const [generatedName, level] of Object.entries(generatedSkills ?? {})) {
-    const skill = availableSkills.get(normalizeName(generatedName));
+    const skill = availableSkills.get(normalizeDocumentName(generatedName));
     if (!skill) {
       unmatched.push(generatedName);
       continue;
@@ -52,9 +52,9 @@ export function buildSkillUpdates(actorSkills, generatedSkills) {
 }
 
 function createNameIndex(names) {
-  return new Map(names.map((name) => [normalizeName(name), name]));
+  return new Map(names.map((name) => [normalizeDocumentName(name), name]));
 }
 
-function normalizeName(name) {
+export function normalizeDocumentName(name) {
   return String(name).normalize("NFKD").replace(/[^\p{L}\p{N}]/gu, "").toLowerCase();
 }

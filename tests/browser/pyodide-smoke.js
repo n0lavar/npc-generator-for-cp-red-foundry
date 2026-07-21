@@ -18,6 +18,12 @@ try {
   generationOptions.model_api_key = null;
   generationOptions.model_base_url = null;
 
+  status.textContent = "Reading compatibility catalog...";
+  const catalog = JSON.parse(await callWorker("getCompatibilityCatalog", null));
+  if (!catalog.stats.length || !catalog.skills.length || !Object.keys(catalog.items).length) {
+    throw new Error("The compatibility catalog is empty.");
+  }
+
   status.textContent = "Generating NPC...";
   const resultJson = await callWorker("generate", generationOptions);
 
