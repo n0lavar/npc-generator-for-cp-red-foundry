@@ -1,7 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { buildAmmoResult, buildWeaponResult } from "../../scripts/services/compatibility-service.js";
+import {
+  buildAmmoResult,
+  buildCyberwareResult,
+  buildWeaponResult
+} from "../../scripts/services/compatibility-service.js";
 import { buildAmmoNameCandidates } from "../../scripts/mapping/item-mapper.js";
 
 test("checks every weapon quality with the same candidate fallbacks as import", () => {
@@ -51,4 +55,28 @@ test("matches special ammo whose generated type repeats its compendium name", ()
 
 test("does not strip a meaningful ammo modification", () => {
   assert.deepEqual(buildAmmoNameCandidates("Rifle (Basic)"), ["Rifle (Basic)"]);
+});
+
+test("excludes Developer mode technical cyberware from compatibility totals", () => {
+  const result = buildCyberwareResult([
+    "Meatbody",
+    "Fashionware",
+    "Neuralware",
+    "Eye Sockets",
+    "Auditory System",
+    "Internal Cyberware",
+    "External Cyberware",
+    "Shoulders",
+    "Hips",
+    "Borgware",
+    "Cybereye",
+    "Neural Link"
+  ], ["Cybereye"]);
+
+  assert.deepEqual(result, {
+    found: 1,
+    total: 2,
+    missingCount: 1,
+    missing: ["Neural Link"]
+  });
 });

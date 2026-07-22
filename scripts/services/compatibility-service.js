@@ -3,6 +3,19 @@ import { buildAmmoNameCandidates, buildWeaponNameCandidates } from "../mapping/i
 import { collectCompendiumItemEntries } from "../foundry/item-compendium.js";
 import { getCompatibilityCatalog } from "./generator-service.js";
 
+const TECHNICAL_CYBERWARE_NAMES = new Set([
+  "Meatbody",
+  "Fashionware",
+  "Neuralware",
+  "Eye Sockets",
+  "Auditory System",
+  "Internal Cyberware",
+  "External Cyberware",
+  "Shoulders",
+  "Hips",
+  "Borgware"
+]);
+
 export async function checkCompatibility(execution) {
   const catalog = await getCompatibilityCatalog(execution);
   const documents = await collectItemDocuments();
@@ -29,9 +42,18 @@ export async function checkCompatibility(execution) {
         ? buildWeaponResult(expected, weaponNames)
         : name === "Ammo"
           ? buildAmmoResult(expected, ammoNames)
-          : buildResult(expected, name === "Armor" ? armorNames : itemNames))
+          : name === "Cyberware"
+            ? buildCyberwareResult(expected, itemNames)
+            : buildResult(expected, name === "Armor" ? armorNames : itemNames))
     }))
   };
+}
+
+export function buildCyberwareResult(cyberwareNames, availableNames) {
+  return buildResult(
+    cyberwareNames.filter((name) => !TECHNICAL_CYBERWARE_NAMES.has(name)),
+    availableNames
+  );
 }
 
 export function buildAmmoResult(ammoNames, availableNames) {
