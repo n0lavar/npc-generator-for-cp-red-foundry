@@ -38,8 +38,8 @@ export async function checkCompatibility(execution) {
     .map((document) => document.name);
 
   return {
-    stats: buildResult(catalog.stats, statNames),
-    skills: buildResult(catalog.skills, skillNames),
+    stats: buildNormalizedResult(catalog.stats, statNames),
+    skills: buildNormalizedResult(catalog.skills, skillNames),
     items: Object.entries(catalog.items).map(([name, expected]) => ({
       name,
       ...(name === "Weapons"
@@ -56,9 +56,9 @@ export async function checkCompatibility(execution) {
 export function buildCyberwareResult(cyberwareNames, availableNames) {
   const expected = [...new Set(cyberwareNames
     .filter((name) => !TECHNICAL_CYBERWARE_NAMES.has(name)))];
-  const available = new Set(availableNames.map(normalizeDocumentName));
+  const available = new Set(availableNames);
   const missing = expected.filter((name) => !buildCyberwareItemMapping(name).candidates
-    .some((candidate) => available.has(normalizeDocumentName(candidate))));
+    .some((candidate) => available.has(candidate)));
   return {
     found: expected.length - missing.length,
     total: expected.length,
@@ -68,10 +68,10 @@ export function buildCyberwareResult(cyberwareNames, availableNames) {
 }
 
 export function buildAmmoResult(ammoNames, availableNames) {
-  const available = new Set(availableNames.map(normalizeDocumentName));
+  const available = new Set(availableNames);
   const uniqueExpected = [...new Set(ammoNames)];
   const missing = uniqueExpected.filter((name) => !buildAmmoNameCandidates(name)
-    .some((candidate) => available.has(normalizeDocumentName(candidate))));
+    .some((candidate) => available.has(candidate)));
 
   return {
     found: uniqueExpected.length - missing.length,
@@ -88,7 +88,7 @@ function getEntryNames(matches, type) {
 }
 
 export function buildWeaponResult(weapons, availableNames) {
-  const available = new Set(availableNames.map(normalizeDocumentName));
+  const available = new Set(availableNames);
   const missing = weapons
     .filter((weapon) => !weaponCanBeMatched(weapon, available))
     .map((weapon) => weapon.name);
@@ -109,11 +109,23 @@ function weaponCanBeMatched(weapon, available) {
       beautifulName: beautifulNames[quality],
       quality
     });
-    return candidates.some((candidate) => available.has(normalizeDocumentName(candidate)));
+    return candidates.some((candidate) => available.has(candidate));
   });
 }
 
 function buildResult(expectedNames, availableNames) {
+  const uniqueExpected = [...new Set(expectedNames)];
+  const available = new Set(availableNames);
+  const missing = uniqueExpected.filter((name) => !available.has(name));
+  return {
+    found: uniqueExpected.length - missing.length,
+    total: uniqueExpected.length,
+    missingCount: missing.length,
+    missing
+  };
+}
+
+function buildNormalizedResult(expectedNames, availableNames) {
   const uniqueExpected = [...new Set(expectedNames)];
   const available = new Set(availableNames.map(normalizeDocumentName));
   const missing = uniqueExpected.filter((name) => !available.has(normalizeDocumentName(name)));

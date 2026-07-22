@@ -99,3 +99,17 @@ test("matches popup cyberware variants to generic Foundry items", () => {
     missing: []
   });
 });
+
+test("uses the same exact cyberware candidates as import", () => {
+  const result = buildCyberwareResult(
+    ["Spray Paint Cyber Finger", "Scrambler / Descrambler"],
+    ["Spray Paint Cyberfinger", "Scrambler/Descrambler"]
+  );
+
+  assert.deepEqual(result, {
+    found: 0,
+    total: 2,
+    missingCount: 2,
+    missing: ["Spray Paint Cyber Finger", "Scrambler / Descrambler"]
+  });
+});
