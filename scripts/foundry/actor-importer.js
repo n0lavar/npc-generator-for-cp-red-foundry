@@ -9,6 +9,7 @@ import { createWeapons } from "./weapon-importer.js";
 import { createCyberware } from "./cyberware-importer.js";
 import { createEquipment } from "./equipment-importer.js";
 import { createJunk } from "./junk-importer.js";
+import { createRole } from "./role-importer.js";
 
 const ACTOR_TYPE = "character";
 
@@ -23,6 +24,7 @@ export async function createActorFromNpc(npc) {
   try {
     const statMapping = buildStatUpdate(actor.system.stats, npc.stats);
     const skillResult = await importSkills(actor, npc.skills);
+    const roleResult = await createRole(actor, npc.role);
 
     if (Object.keys(statMapping.update).length > 0) {
       await actor.update(statMapping.update);
@@ -37,6 +39,7 @@ export async function createActorFromNpc(npc) {
 
     reportUnmatchedNames("stats", statMapping.unmatched);
     reportUnmatchedNames("skills", skillResult.unmatched);
+    reportUnmatchedNames("roles", roleResult.unmatched);
     reportUnmatchedNames("cyberware", cyberwareResult.unmatched);
     reportUnmatchedNames("armor", armorResult.unmatched);
     reportUnmatchedNames("weapons", weaponResult.unmatched);
@@ -73,6 +76,9 @@ function validateNpc(npc) {
   }
   if (!npc.skills || typeof npc.skills !== "object") {
     throw new Error("The generated NPC does not contain skills.");
+  }
+  if (typeof npc.role !== "string" || !npc.role.trim()) {
+    throw new Error("The generated NPC does not contain a role.");
   }
 }
 
