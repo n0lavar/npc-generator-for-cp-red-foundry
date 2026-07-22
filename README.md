@@ -39,7 +39,10 @@ Item compendiums, cloned as embedded Weapon items, and equipped. Armor lookup
 also searches every available Item compendium, including packs from modules.
 Generated inventory entries whose generator type is `ammo` are resolved through
 the same global compendium lookup, cloned as embedded Ammo items, and assigned
-the quantity generated for the NPC.
+the quantity generated for the NPC. Inventory entries whose generator type is
+`equipment` are resolved by beautiful name (falling back to their generic name)
+across all Item compendiums, cloned as embedded Gear items, and assigned their
+generated quantity.
 
 ## LM Studio and CORS
 

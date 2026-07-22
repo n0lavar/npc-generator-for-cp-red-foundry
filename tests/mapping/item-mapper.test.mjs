@@ -5,6 +5,7 @@ import {
   buildAmmoImportRequests,
   buildArmorImportRequests,
   buildCyberwareImportRequests,
+  buildEquipmentImportRequests,
   buildWeaponImportRequests
 } from "../../scripts/mapping/item-mapper.js";
 
@@ -119,6 +120,33 @@ test("builds ammo requests only from typed inventory entries", () => {
 
   assert.deepEqual(result, {
     requests: [{ name: "Rifle (Basic)", candidates: ["Rifle (Basic)"], amount: 30 }],
+    unmatched: []
+  });
+});
+
+test("builds equipment requests with the beautiful name first", () => {
+  const result = buildEquipmentImportRequests([
+    {
+      item: {
+        name: "Electric Guitar/Other Instrument",
+        beautiful_name: "Electric Guitar",
+        type: "equipment"
+      },
+      amount: 1
+    },
+    { item: { name: "Duct Tape", type: "equipment" }, amount: 2 },
+    { item: { name: "Net", type: "ammo" }, amount: 3 }
+  ]);
+
+  assert.deepEqual(result, {
+    requests: [
+      {
+        name: "Electric Guitar/Other Instrument",
+        candidates: ["Electric Guitar", "Electric Guitar/Other Instrument"],
+        amount: 1
+      },
+      { name: "Duct Tape", candidates: ["Duct Tape"], amount: 2 }
+    ],
     unmatched: []
   });
 });

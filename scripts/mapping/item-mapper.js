@@ -112,6 +112,31 @@ export function buildAmmoImportRequests(generatedInventory) {
   return { requests, unmatched };
 }
 
+export function buildEquipmentImportRequests(generatedInventory) {
+  const requests = [];
+  const unmatched = [];
+
+  for (const entry of generatedInventory ?? []) {
+    if (entry?.item?.type !== "equipment") continue;
+
+    const name = cleanName(entry.item.name);
+    const beautifulName = cleanName(entry.item.beautiful_name);
+    const amount = Number(entry.amount);
+    if (!name || !Number.isInteger(amount) || amount <= 0) {
+      unmatched.push(name || String(entry?.item?.name ?? entry));
+      continue;
+    }
+
+    requests.push({
+      name,
+      candidates: [...new Set([beautifulName, name].filter(Boolean))],
+      amount
+    });
+  }
+
+  return { requests, unmatched };
+}
+
 export function buildAmmoNameCandidates(name) {
   const cleanedName = cleanName(name);
   const candidates = [cleanedName];
