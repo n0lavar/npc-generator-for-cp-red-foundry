@@ -27,6 +27,7 @@ export async function createCyberware(actor, generatedCyberware) {
     }
 
     delete source._id;
+    if (request.weaponType) source.system.weaponType = request.weaponType;
     const [createdItem] = await actor.createEmbeddedDocuments(
       "Item",
       [source],

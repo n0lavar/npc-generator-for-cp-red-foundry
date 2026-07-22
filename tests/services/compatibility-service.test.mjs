@@ -80,3 +80,22 @@ test("excludes Developer mode technical cyberware from compatibility totals", ()
     missing: ["Neural Link"]
   });
 });
+
+test("matches popup cyberware variants to generic Foundry items", () => {
+  const result = buildCyberwareResult([
+    "Popup Melee Weapon (Light)",
+    "Popup Melee Weapon (Medium)",
+    "Popup Melee Weapon (Heavy)",
+    "Popup Ranged Weapon (Medium Pistol)",
+    "Popup Ranged Weapon (Heavy Pistol)",
+    "Popup Ranged Weapon (Very Heavy Pistol)",
+    "Popup Ranged Weapon (SMG)"
+  ], ["Popup Melee Weapon", "Popup Ranged Weapon"]);
+
+  assert.deepEqual(result, {
+    found: 7,
+    total: 7,
+    missingCount: 0,
+    missing: []
+  });
+});

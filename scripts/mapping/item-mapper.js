@@ -31,6 +31,24 @@ const CYBERWARE_NAME_MAPPINGS = new Map([
   ["External Cyberware", "External (7 Option Slots)"]
 ]);
 
+const POPUP_CYBERWARE_MAPPINGS = new Map([
+  ["Popup Melee Weapon (Light)", { name: "Popup Melee Weapon", weaponType: "lightMelee" }],
+  ["Popup Melee Weapon (Medium)", { name: "Popup Melee Weapon", weaponType: "medMelee" }],
+  ["Popup Melee Weapon (Heavy)", { name: "Popup Melee Weapon", weaponType: "heavyMelee" }],
+  ["Popup Ranged Weapon (Medium Pistol)", { name: "Popup Ranged Weapon", weaponType: "medPistol" }],
+  ["Popup Ranged Weapon (Heavy Pistol)", { name: "Popup Ranged Weapon", weaponType: "heavyPistol" }],
+  ["Popup Ranged Weapon (Very Heavy Pistol)", { name: "Popup Ranged Weapon", weaponType: "vHeavyPistol" }],
+  ["Popup Ranged Weapon (SMG)", { name: "Popup Ranged Weapon", weaponType: "smg" }]
+]);
+
+export function buildCyberwareItemMapping(name) {
+  const popupMapping = POPUP_CYBERWARE_MAPPINGS.get(name);
+  if (popupMapping) {
+    return { candidates: [popupMapping.name], weaponType: popupMapping.weaponType };
+  }
+  return { candidates: [CYBERWARE_NAME_MAPPINGS.get(name) ?? name] };
+}
+
 export function buildCyberwareImportRequests(generatedCyberware) {
   const requests = [];
   const unmatched = [];
@@ -53,9 +71,10 @@ function visitCyberwareNode(node, requests, unmatched, parentIndex) {
   let childParentIndex = parentIndex;
   if (name && !CYBERWARE_STRUCTURAL_CONTAINERS.has(name)) {
     childParentIndex = requests.length;
+    const itemMapping = buildCyberwareItemMapping(name);
     requests.push({
       name,
-      candidates: [CYBERWARE_NAME_MAPPINGS.get(name) ?? name],
+      ...itemMapping,
       parentIndex
     });
   } else if (node.item && !name) {

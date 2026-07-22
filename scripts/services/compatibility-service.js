@@ -1,5 +1,9 @@
 import { normalizeDocumentName } from "../mapping/actor-mapper.js";
-import { buildAmmoNameCandidates, buildWeaponNameCandidates } from "../mapping/item-mapper.js";
+import {
+  buildAmmoNameCandidates,
+  buildCyberwareItemMapping,
+  buildWeaponNameCandidates
+} from "../mapping/item-mapper.js";
 import { collectCompendiumItemEntries } from "../foundry/item-compendium.js";
 import { getCompatibilityCatalog } from "./generator-service.js";
 
@@ -50,10 +54,17 @@ export async function checkCompatibility(execution) {
 }
 
 export function buildCyberwareResult(cyberwareNames, availableNames) {
-  return buildResult(
-    cyberwareNames.filter((name) => !TECHNICAL_CYBERWARE_NAMES.has(name)),
-    availableNames
-  );
+  const expected = [...new Set(cyberwareNames
+    .filter((name) => !TECHNICAL_CYBERWARE_NAMES.has(name)))];
+  const available = new Set(availableNames.map(normalizeDocumentName));
+  const missing = expected.filter((name) => !buildCyberwareItemMapping(name).candidates
+    .some((candidate) => available.has(normalizeDocumentName(candidate))));
+  return {
+    found: expected.length - missing.length,
+    total: expected.length,
+    missingCount: missing.length,
+    missing
+  };
 }
 
 export function buildAmmoResult(ammoNames, availableNames) {

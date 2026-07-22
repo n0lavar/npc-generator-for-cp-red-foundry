@@ -79,6 +79,38 @@ test("maps renamed Developer mode cyberware containers to current Foundry names"
   });
 });
 
+test("maps popup cyberware variants to generic Foundry items and weapon types", () => {
+  const result = buildCyberwareImportRequests([
+    { item: { name: "Popup Melee Weapon (Heavy)" }, children: [] },
+    { item: { name: "Popup Ranged Weapon (Very Heavy Pistol)" }, children: [] },
+    { item: { name: "Popup Ranged Weapon (SMG)" }, children: [] }
+  ]);
+
+  assert.deepEqual(result, {
+    requests: [
+      {
+        name: "Popup Melee Weapon (Heavy)",
+        candidates: ["Popup Melee Weapon"],
+        weaponType: "heavyMelee",
+        parentIndex: null
+      },
+      {
+        name: "Popup Ranged Weapon (Very Heavy Pistol)",
+        candidates: ["Popup Ranged Weapon"],
+        weaponType: "vHeavyPistol",
+        parentIndex: null
+      },
+      {
+        name: "Popup Ranged Weapon (SMG)",
+        candidates: ["Popup Ranged Weapon"],
+        weaponType: "smg",
+        parentIndex: null
+      }
+    ],
+    unmatched: []
+  });
+});
+
 test("builds ammo requests only from typed inventory entries", () => {
   const result = buildAmmoImportRequests([
     { item: { name: "Rifle (Basic)", type: "ammo" }, amount: 30 },

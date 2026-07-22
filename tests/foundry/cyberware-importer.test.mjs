@@ -70,3 +70,45 @@ test("reuses core cyberware and installs cloned children through the system life
   assert.equal(installed.length, 2);
   assert.deepEqual(result, { created: 2, unmatched: [] });
 });
+
+test("sets the selected weapon type on generic popup cyberware", async () => {
+  const source = {
+    _id: "popup-id",
+    name: "Popup Ranged Weapon",
+    type: "cyberware",
+    system: { core: false, weaponType: "medPistol" }
+  };
+  const pack = {
+    documentName: "Item",
+    collection: "core.cyberware",
+    async getIndex() {
+      return [{ _id: source._id, name: source.name, type: source.type }];
+    },
+    async getDocument() {
+      return { toObject: () => structuredClone(source) };
+    }
+  };
+  globalThis.game = { packs: new Map([[pack.collection, pack]]) };
+
+  let createdSource;
+  const actor = {
+    itemTypes: { cyberware: [] },
+    async createEmbeddedDocuments(type, sources) {
+      assert.equal(type, "Item");
+      [createdSource] = sources;
+      return [{ ...createdSource, id: "created-popup", async delete() {} }];
+    },
+    async installItems() {
+      return true;
+    }
+  };
+
+  const result = await createCyberware(actor, [{
+    item: { name: "Popup Ranged Weapon (SMG)" },
+    children: []
+  }]);
+
+  assert.equal(createdSource.name, "Popup Ranged Weapon");
+  assert.equal(createdSource.system.weaponType, "smg");
+  assert.deepEqual(result, { created: 1, unmatched: [] });
+});
