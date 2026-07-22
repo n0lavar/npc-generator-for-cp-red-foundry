@@ -6,8 +6,31 @@ import {
   buildArmorImportRequests,
   buildCyberwareImportRequests,
   buildEquipmentImportRequests,
+  buildJunkImportRequests,
   buildWeaponImportRequests
 } from "../../scripts/mapping/item-mapper.js";
+
+test("builds junk requests and separates Eddies", () => {
+  const result = buildJunkImportRequests([
+    { item: { name: "Eddies", type: "junk", price: 1 }, amount: 51 },
+    { item: { name: "Lighter", type: "junk", price: 10 }, amount: 1 },
+    { item: { name: "Agent", type: "equipment", price: 100 }, amount: 1 }
+  ]);
+
+  assert.deepEqual(result, {
+    requests: [{ name: "Lighter", candidates: ["Lighter"], amount: 1, price: 10 }],
+    eddies: 51,
+    unmatched: []
+  });
+});
+
+test("reports junk with an invalid price", () => {
+  const result = buildJunkImportRequests([
+    { item: { name: "Broken Thing", type: "junk" }, amount: 1 }
+  ]);
+
+  assert.deepEqual(result, { requests: [], eddies: 0, unmatched: ["Broken Thing"] });
+});
 
 test("flattens the Developer mode cyberware root array", () => {
   const result = buildCyberwareImportRequests([{

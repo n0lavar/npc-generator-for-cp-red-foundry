@@ -8,6 +8,7 @@ import { importSkills } from "./skill-importer.js";
 import { createWeapons } from "./weapon-importer.js";
 import { createCyberware } from "./cyberware-importer.js";
 import { createEquipment } from "./equipment-importer.js";
+import { createJunk } from "./junk-importer.js";
 
 const ACTOR_TYPE = "character";
 
@@ -32,6 +33,7 @@ export async function createActorFromNpc(npc) {
     const weaponResult = await createWeapons(actor, npc.weapons);
     const ammoResult = await createAmmo(actor, npc.inventory);
     const equipmentResult = await createEquipment(actor, npc.inventory);
+    const junkResult = await createJunk(actor, npc.inventory);
 
     reportUnmatchedNames("stats", statMapping.unmatched);
     reportUnmatchedNames("skills", skillResult.unmatched);
@@ -40,6 +42,7 @@ export async function createActorFromNpc(npc) {
     reportUnmatchedNames("weapons", weaponResult.unmatched);
     reportUnmatchedNames("ammo", ammoResult.unmatched);
     reportUnmatchedNames("equipment", equipmentResult.unmatched);
+    reportUnmatchedNames("junk", junkResult.unmatched);
     return actor;
   } catch (error) {
     await actor.delete();

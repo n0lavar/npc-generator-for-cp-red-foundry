@@ -42,7 +42,10 @@ the same global compendium lookup, cloned as embedded Ammo items, and assigned
 the quantity generated for the NPC. Inventory entries whose generator type is
 `equipment` are resolved by beautiful name (falling back to their generic name)
 across all Item compendiums, cloned as embedded Gear items, and assigned their
-generated quantity.
+generated quantity. Junk is resolved by exact name across the same global Gear
+index. Missing junk is created as Gear with its generated amount and market
+price. The special `Eddies` junk entry is deposited into the Actor's wealth
+instead of being created as an Item.
 
 ## LM Studio and CORS
 

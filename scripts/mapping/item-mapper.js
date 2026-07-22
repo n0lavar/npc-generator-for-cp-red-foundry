@@ -137,6 +137,34 @@ export function buildEquipmentImportRequests(generatedInventory) {
   return { requests, unmatched };
 }
 
+export function buildJunkImportRequests(generatedInventory) {
+  const requests = [];
+  const unmatched = [];
+  let eddies = 0;
+
+  for (const entry of generatedInventory ?? []) {
+    if (entry?.item?.type !== "junk") continue;
+
+    const name = cleanName(entry.item.name);
+    const amount = Number(entry.amount);
+    const price = Number(entry.item.price);
+    if (!name || !Number.isInteger(amount) || amount <= 0
+      || !Number.isInteger(price) || price < 0) {
+      unmatched.push(name || String(entry?.item?.name ?? entry));
+      continue;
+    }
+
+    if (name === "Eddies") {
+      eddies += amount;
+      continue;
+    }
+
+    requests.push({ name, candidates: [name], amount, price });
+  }
+
+  return { requests, eddies, unmatched };
+}
+
 export function buildAmmoNameCandidates(name) {
   const cleanedName = cleanName(name);
   const candidates = [cleanedName];
