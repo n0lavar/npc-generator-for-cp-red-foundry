@@ -1,7 +1,9 @@
 import { MODULE_ID } from "../constants.js";
 import { refreshCompatibilityDefaults } from "../services/compatibility-defaults.js";
 import { buildGeneratorExecution } from "../services/generator-execution.js";
+import { isGeneratorWorkerReady } from "../services/generator-service.js";
 import { localizeOrFallback } from "../utils/localization.js";
+import { createStatusDialog } from "./status-dialog.js";
 
 export class CompatibilityCheck extends FormApplication {
   get title() {
@@ -9,15 +11,30 @@ export class CompatibilityCheck extends FormApplication {
   }
 
   async render() {
-    ui.notifications.info(
-      localizeOrFallback("CompatibilityCheckStarted", "Compatibility check started.")
+    const mode = game.settings.get(MODULE_ID, "executionMode");
+    const showStatusDialogs = game.settings.get(MODULE_ID, "showStatusDialogs");
+    const execution = await buildGeneratorExecution();
+    if (!execution) return this;
+    const status = createStatusDialog(
+      isGeneratorWorkerReady(mode)
+        ? "StatusCheckingCompatibility"
+        : "StatusLoadingGenerator",
+      isGeneratorWorkerReady(mode)
+        ? "Checking generator compatibility…"
+        : "Loading generator module…",
+      showStatusDialogs
     );
 
     try {
       const report = await refreshCompatibilityDefaults(
-        await buildGeneratorExecution()
+        execution,
+        (stage) => updateCompatibilityStatus(status, stage)
       );
       logReport(report);
+      status.complete(
+        "StatusCompatibilityComplete",
+        "Compatibility check complete."
+      );
       const content = await renderTemplate(
         `modules/${MODULE_ID}/templates/compatibility-report.hbs`,
         buildViewModel(report)
@@ -35,15 +52,35 @@ export class CompatibilityCheck extends FormApplication {
       }, { width: 700 }).render(true);
     } catch (error) {
       console.error("NPC Generator | Compatibility check failed.", error);
-      ui.notifications.error(
-        localizeOrFallback("CompatibilityCheckFailed", "Compatibility check failed. See the console.")
+      status.fail(
+        "StatusCompatibilityFailed",
+        "Compatibility check failed. See the console."
       );
+      if (!showStatusDialogs) {
+        ui.notifications.error(
+          localizeOrFallback(
+            "CompatibilityCheckFailed",
+            "Compatibility check failed. See the console."
+          )
+        );
+      }
     }
 
     return this;
   }
 
   async _updateObject() {}
+}
+
+function updateCompatibilityStatus(status, stage) {
+  const stages = {
+    initializing: ["StatusLoadingGenerator", "Loading generator module…"],
+    ready: ["StatusCheckingCompatibility", "Checking generator compatibility…"],
+    collectingDocuments: ["StatusCollectingDocuments", "Inspecting Foundry Items…"],
+    savingDefaults: ["StatusSavingDefaults", "Saving compatibility defaults…"]
+  };
+  const phase = stages[stage];
+  if (phase) status.update(...phase);
 }
 
 function logReport(report) {

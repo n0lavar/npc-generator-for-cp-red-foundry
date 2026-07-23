@@ -1,13 +1,15 @@
 import { MODULE_ID } from "../constants.js";
 import {
   getExecutionMode,
-  getOpenCreatedNpc
+  getOpenCreatedNpc,
+  getShowStatusDialogs
 } from "../foundry/settings.js";
 import { createActorFromNpc } from "../foundry/actor-importer.js";
 import { buildGeneratorExecution } from "../services/generator-execution.js";
 import {
   generateNpc,
-  getGenerationOptions
+  getGenerationOptions,
+  isGeneratorWorkerReady
 } from "../services/generator-service.js";
 import {
   applyGenerationSettings,
@@ -16,6 +18,7 @@ import {
 } from "../services/generation-settings.js";
 import { localizeOrFallback } from "../utils/localization.js";
 import { redactGenerationSecrets } from "../utils/logging.js";
+import { createStatusDialog } from "./status-dialog.js";
 
 const VISIBLE_GROUPS = ["NPC Customization", "Generation settings"];
 
@@ -25,9 +28,30 @@ export async function openNpcGeneratorDialog() {
   }
 
   const executionMode = getExecutionMode();
-  const options = await getGenerationOptions(
-    await buildGeneratorExecution(executionMode)
-  );
+  const execution = await buildGeneratorExecution(executionMode);
+  const needsLoadingStatus = !isGeneratorWorkerReady(executionMode);
+  const loadingStatus = needsLoadingStatus
+    ? createStatusDialog(
+      "StatusLoadingGenerator",
+      "Loading generator module…",
+      getShowStatusDialogs()
+    )
+    : null;
+  let options;
+  try {
+    options = await getGenerationOptions(execution, (stage) => {
+      if (stage === "ready") {
+        loadingStatus?.update("StatusGeneratorReady", "Generator module loaded.");
+      }
+    });
+    loadingStatus?.complete("StatusGeneratorReady", "Generator module loaded.");
+  } catch (error) {
+    loadingStatus?.fail(
+      "StatusGeneratorLoadFailed",
+      "Generator module could not be loaded. See the console."
+    );
+    throw error;
+  }
   const settings = await loadGenerationSettings();
   const fields = applyGenerationSettings(options.fields.map((field) => ({
     ...field,
@@ -123,7 +147,11 @@ async function handleCreateActor(html, executionMode, fields, forbiddenSkills) {
   const form = html.find("form")[0];
   if (!form) throw new Error("The generator form was not found.");
 
-  ui.notifications.info(localizeOrFallback("GenerationStarted", "NPC generation started."));
+  const status = createStatusDialog(
+    "StatusGeneratingNpc",
+    "Generating NPC…",
+    getShowStatusDialogs()
+  );
 
   try {
     const generationOptions = {
@@ -137,22 +165,47 @@ async function handleCreateActor(html, executionMode, fields, forbiddenSkills) {
     );
     const resultJson = await generateNpc(
       generationOptions,
-      await buildGeneratorExecution(executionMode)
+      await buildGeneratorExecution(executionMode),
+      (stage) => {
+        if (stage === "initializing") {
+          status.update("StatusLoadingGenerator", "Loading generator module…");
+        } else if (stage === "ready") {
+          status.update("StatusGeneratingNpc", "Generating NPC…");
+        }
+      }
     );
+    status.update("StatusValidatingNpc", "Validating generated NPC…");
     const result = JSON.parse(resultJson);
     console.log("NPC Generator | Generated NPC", result);
-    const actor = await createActorFromNpc(result);
-    ui.notifications.info(
-      localizeOrFallback("ActorCreated", "Actor created: {name}")
-        .replace("{name}", actor.name)
-    );
+    const actor = await createActorFromNpc(result, (stage) => {
+      updateImportStatus(status, stage);
+    });
+    status.complete("StatusActorCreated", "Actor created.");
     if (getOpenCreatedNpc()) actor.sheet.render(true);
   } catch (error) {
     console.error("NPC Generator | NPC generation failed.", error);
-    ui.notifications.error(
-      localizeOrFallback("GenerationFailed", "NPC generation failed. See the console.")
-    );
+    status.fail("StatusGenerationFailed", "NPC generation failed. See the console.");
+    if (!getShowStatusDialogs()) {
+      ui.notifications.error(
+        localizeOrFallback("GenerationFailed", "NPC generation failed. See the console.")
+      );
+    }
   }
+}
+
+function updateImportStatus(status, stage) {
+  const stages = {
+    creatingActor: ["StatusCreatingActor", "Creating Actor…"],
+    importingSkills: ["StatusImportingSkills", "Importing skills…"],
+    importingRole: ["StatusImportingRole", "Importing role…"],
+    updatingActor: ["StatusUpdatingActor", "Updating stats and biography…"],
+    importingCyberware: ["StatusImportingCyberware", "Importing cyberware…"],
+    importingArmor: ["StatusImportingArmor", "Importing armor…"],
+    importingWeapons: ["StatusImportingWeapons", "Importing weapons…"],
+    importingInventory: ["StatusImportingInventory", "Importing inventory…"]
+  };
+  const phase = stages[stage];
+  if (phase) status.update(...phase);
 }
 
 function registerSettingsPersistence(html, fields) {

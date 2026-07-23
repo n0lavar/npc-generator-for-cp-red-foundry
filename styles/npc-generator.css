@@ -108,6 +108,41 @@
   margin-bottom: 0.35rem;
 }
 
+.npc-generator-status-dialog .window-content {
+  padding: 0.75rem 1rem;
+}
+
+.npc-generator-status-dialog .dialog-buttons:empty {
+  display: none;
+}
+
+.npc-generator-status {
+  align-items: center;
+  display: flex;
+  gap: 0.65rem;
+  min-height: 1.5rem;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.npc-generator-status span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.npc-generator-status.is-complete i::before {
+  content: "\f00c";
+}
+
+.npc-generator-status.is-failed i::before {
+  content: "\f071";
+}
+
+.npc-generator-status.is-complete i,
+.npc-generator-status.is-failed i {
+  animation: none;
+}
+
 @media (max-width: 560px) {
   .npc-generator-form .form-group,
   .npc-generator-select-field,

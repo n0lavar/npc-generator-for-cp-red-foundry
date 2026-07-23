@@ -15,9 +15,10 @@ import { localizeOrFallback } from "../utils/localization.js";
 
 const ACTOR_TYPE = "character";
 
-export async function createActorFromNpc(npc) {
+export async function createActorFromNpc(npc, onProgress) {
   validateNpc(npc);
 
+  onProgress?.("creatingActor");
   const actor = await CONFIG.Actor.documentClass.create({
     name: buildActorName(npc),
     type: ACTOR_TYPE
@@ -25,9 +26,12 @@ export async function createActorFromNpc(npc) {
 
   try {
     const statMapping = buildStatUpdate(actor.system.stats, npc.stats);
+    onProgress?.("importingSkills");
     const skillResult = await importSkills(actor, npc.skills);
+    onProgress?.("importingRole");
     const roleResult = await createRole(actor, npc.role);
 
+    onProgress?.("updatingActor");
     if (Object.keys(statMapping.update).length > 0) {
       await actor.update(statMapping.update);
     }
@@ -36,9 +40,13 @@ export async function createActorFromNpc(npc) {
       await actor.update(biographyUpdate);
     }
     await initializeDerivedResources(actor);
+    onProgress?.("importingCyberware");
     const cyberwareResult = await createCyberware(actor, npc.cyberware);
+    onProgress?.("importingArmor");
     const armorResult = await createAndEquipArmor(actor, npc.armor);
+    onProgress?.("importingWeapons");
     const weaponResult = await createWeapons(actor, npc.weapons);
+    onProgress?.("importingInventory");
     const ammoResult = await createAmmo(actor, npc.inventory);
     const equipmentResult = await createEquipment(actor, npc.inventory);
     const junkResult = await createJunk(actor, npc.inventory);

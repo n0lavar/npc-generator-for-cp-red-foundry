@@ -4,6 +4,18 @@ import { CompatibilityCheck } from "../applications/compatibility-check.js";
 import { localizeOrFallback } from "../utils/localization.js";
 
 export function registerSettings() {
+  game.settings.register(MODULE_ID, "showStatusDialogs", {
+    name: localizeOrFallback("ShowStatusDialogs", "Show status dialogs"),
+    hint: localizeOrFallback(
+      "ShowStatusDialogsHint",
+      "Show a small window with the current stage of generator operations."
+    ),
+    scope: "client",
+    config: true,
+    type: Boolean,
+    default: true
+  });
+
   game.settings.register(MODULE_ID, "openCreatedNpc", {
     name: localizeOrFallback("OpenCreatedNpc", "Open created NPC"),
     hint: localizeOrFallback(
@@ -73,6 +85,7 @@ export function registerSettingsVisibilityHook() {
 function reorderModuleSettings(html) {
   const root = html[0] ?? html;
   const selectors = [
+    `[name="${MODULE_ID}.showStatusDialogs"]`,
     `[name="${MODULE_ID}.openCreatedNpc"]`,
     `[data-key="${MODULE_ID}.compatibilityCheck"]`,
     `[name="${MODULE_ID}.executionMode"]`,
@@ -101,4 +114,8 @@ export function getExecutionMode() {
 
 export function getOpenCreatedNpc() {
   return game.settings.get(MODULE_ID, "openCreatedNpc");
+}
+
+export function getShowStatusDialogs() {
+  return game.settings.get(MODULE_ID, "showStatusDialogs");
 }

@@ -20,8 +20,9 @@ const TECHNICAL_CYBERWARE_NAMES = new Set([
   "Borgware"
 ]);
 
-export async function checkCompatibility(execution) {
-  const catalog = await getCompatibilityCatalog(execution);
+export async function checkCompatibility(execution, onProgress) {
+  const catalog = await getCompatibilityCatalog(execution, onProgress);
+  onProgress?.("collectingDocuments");
   const documents = await collectItemDocuments();
   const equipmentEntries = await collectCompendiumItemEntries(["armor", "weapon"]);
   const armorNames = getEntryNames(equipmentEntries, "armor");

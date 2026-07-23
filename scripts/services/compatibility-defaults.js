@@ -1,8 +1,9 @@
 import { checkCompatibility } from "./compatibility-service.js";
 import { saveGenerationSettings } from "./generation-settings.js";
 
-export async function refreshCompatibilityDefaults(execution) {
-  const report = await checkCompatibility(execution);
+export async function refreshCompatibilityDefaults(execution, onProgress) {
+  const report = await checkCompatibility(execution, onProgress);
+  onProgress?.("savingDefaults");
   await saveGenerationSettings(buildCompatibilityDefaults(report));
   return report;
 }
