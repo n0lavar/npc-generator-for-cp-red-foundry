@@ -67,8 +67,8 @@ assert.deepEqual(buildActorBiographyUpdate({
   "system.lifepath.affectations": "<p>Always wears mirrorshades</p>",
   "system.lifepath.aboutPeople": "<p>People are tools</p>",
   "system.lifepath.familyBackground": "<p>Nomad Pack</p><p>The family was always there.</p>",
-  "system.lifepath.friends": "<ol><li>A teacher or mentor.</li></ol>",
-  "system.lifepath.enemies": "<ol><li>Ex-friend — Lost face — You — Just themselves — Avoid them</li></ol>",
+  "system.lifepath.friends": "<ol><li><strong>Relationship to you:</strong> A teacher or mentor.</li></ol>",
+  "system.lifepath.enemies": "<ol><li><strong>Who:</strong> Ex-friend<br><strong>Cause:</strong> Lost face<br><strong>Wronged party:</strong> You<br><strong>Resources:</strong> Just themselves<br><strong>Reaction:</strong> Avoid them</li></ol>",
   "system.lifepath.lifeGoals": "<p>Get what&#039;s yours</p>",
   "system.information.notes": "<p>First line<br>Second &lt;line&gt;</p>"
 });
@@ -77,3 +77,39 @@ assert.deepEqual(buildActorBiographyUpdate({
   lifepath: {},
   description: ""
 }), {});
+
+assert.deepEqual(buildActorBiographyUpdate({
+  lifepath: {
+    enemies: [{
+      enemy: "Rival <fixer>",
+      cause: "A deal went bad & became personal"
+    }, null, {}]
+  }
+}), {
+  "system.lifepath.enemies": "<ol><li><strong>Who:</strong> Rival &lt;fixer&gt;<br><strong>Cause:</strong> A deal went bad &amp; became personal</li></ol>"
+});
+
+assert.deepEqual(buildActorBiographyUpdate({
+  lifepath: {
+    friends: ["Old partner"],
+    tragic_love_affairs: ["They vanished"]
+  }
+}, {
+  friend: "Connection",
+  loveAffair: "Outcome",
+  enemy: {}
+}), {
+  "system.lifepath.friends": "<ol><li><strong>Connection:</strong> Old partner</li></ol>",
+  "system.lifepath.tragicLoveAffairs": "<ol><li><strong>Outcome:</strong> They vanished</li></ol>"
+});
+
+assert.deepEqual(buildActorBiographyUpdate({
+  lifepath: {
+    enemies: [
+      { enemy: "First rival" },
+      { enemy: "Second rival" }
+    ]
+  }
+}), {
+  "system.lifepath.enemies": "<ol><li><strong>Who:</strong> First rival</li><br><li><strong>Who:</strong> Second rival</li></ol>"
+});

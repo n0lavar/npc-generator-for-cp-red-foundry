@@ -49,5 +49,12 @@
   "npc_generator_for_cp_red_foundry.ActorCreated": "Actor created: {name}",
   "npc_generator_for_cp_red_foundry.GenerationFailed": "NPC generation failed. See the console.",
   "npc_generator_for_cp_red_foundry.DialogError": "The NPC generator dialog could not be opened.",
-  "npc_generator_for_cp_red_foundry.SettingsSaveFailed": "Generation settings could not be saved."
+  "npc_generator_for_cp_red_foundry.SettingsSaveFailed": "Generation settings could not be saved.",
+  "npc_generator_for_cp_red_foundry.FriendRelationship": "Relationship to you",
+  "npc_generator_for_cp_red_foundry.LoveAffairOutcome": "What happened",
+  "npc_generator_for_cp_red_foundry.EnemyWho": "Who",
+  "npc_generator_for_cp_red_foundry.EnemyCause": "Cause",
+  "npc_generator_for_cp_red_foundry.EnemyWrongedParty": "Wronged party",
+  "npc_generator_for_cp_red_foundry.EnemyResources": "Resources",
+  "npc_generator_for_cp_red_foundry.EnemyReaction": "Reaction"
 }

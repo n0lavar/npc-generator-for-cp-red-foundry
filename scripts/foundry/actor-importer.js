@@ -11,6 +11,7 @@ import { createCyberware } from "./cyberware-importer.js";
 import { createEquipment } from "./equipment-importer.js";
 import { createJunk } from "./junk-importer.js";
 import { createRole } from "./role-importer.js";
+import { localizeOrFallback } from "../utils/localization.js";
 
 const ACTOR_TYPE = "character";
 
@@ -30,7 +31,7 @@ export async function createActorFromNpc(npc) {
     if (Object.keys(statMapping.update).length > 0) {
       await actor.update(statMapping.update);
     }
-    const biographyUpdate = buildActorBiographyUpdate(npc);
+    const biographyUpdate = buildActorBiographyUpdate(npc, getLifepathLabels());
     if (Object.keys(biographyUpdate).length > 0) {
       await actor.update(biographyUpdate);
     }
@@ -56,6 +57,20 @@ export async function createActorFromNpc(npc) {
     await actor.delete();
     throw error;
   }
+}
+
+function getLifepathLabels() {
+  return {
+    friend: localizeOrFallback("FriendRelationship", "Relationship to you"),
+    loveAffair: localizeOrFallback("LoveAffairOutcome", "What happened"),
+    enemy: {
+      enemy: localizeOrFallback("EnemyWho", "Who"),
+      cause: localizeOrFallback("EnemyCause", "Cause"),
+      wronged_party: localizeOrFallback("EnemyWrongedParty", "Wronged party"),
+      resources: localizeOrFallback("EnemyResources", "Resources"),
+      reaction: localizeOrFallback("EnemyReaction", "Reaction")
+    }
+  };
 }
 
 async function initializeDerivedResources(actor) {

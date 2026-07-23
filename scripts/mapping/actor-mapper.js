@@ -28,9 +28,29 @@ const LIFEPATH_FIELDS = {
   life_goal: "lifeGoals"
 };
 
-export function buildActorBiographyUpdate(npc) {
+const DEFAULT_LIFEPATH_LABELS = {
+  friend: "Relationship to you",
+  loveAffair: "What happened",
+  enemy: {
+    enemy: "Who",
+    cause: "Cause",
+    wronged_party: "Wronged party",
+    resources: "Resources",
+    reaction: "Reaction"
+  }
+};
+
+export function buildActorBiographyUpdate(npc, labels = DEFAULT_LIFEPATH_LABELS) {
   const update = {};
   const lifepath = npc?.lifepath;
+  const resolvedLabels = {
+    ...DEFAULT_LIFEPATH_LABELS,
+    ...labels,
+    enemy: {
+      ...DEFAULT_LIFEPATH_LABELS.enemy,
+      ...labels?.enemy
+    }
+  };
 
   if (lifepath && typeof lifepath === "object" && !Array.isArray(lifepath)) {
     const culturalOrigin = [lifepath.cultural_origin, lifepath.language]
@@ -40,7 +60,11 @@ export function buildActorBiographyUpdate(npc) {
     }
 
     for (const [generatorField, actorField] of Object.entries(LIFEPATH_FIELDS)) {
-      const html = formatLifepathValue(generatorField, lifepath[generatorField]);
+      const html = formatLifepathValue(
+        generatorField,
+        lifepath[generatorField],
+        resolvedLabels
+      );
       if (html) update[`system.lifepath.${actorField}`] = html;
     }
   }
@@ -101,12 +125,18 @@ export function normalizeDocumentName(name) {
   return String(name).normalize("NFKD").replace(/[^\p{L}\p{N}]/gu, "").toLowerCase();
 }
 
-function formatLifepathValue(field, value) {
+function formatLifepathValue(field, value, labels) {
   if (field === "family_background" && value && typeof value === "object") {
     return toParagraphs([value.name, value.description].filter(isNonEmptyString));
   }
   if (field === "enemies" && Array.isArray(value)) {
-    return toList(value.map(formatEnemy).filter(Boolean));
+    return formatEnemies(value, labels.enemy);
+  }
+  if (field === "friends" && Array.isArray(value)) {
+    return formatDescribedList(value, labels.friend);
+  }
+  if (field === "tragic_love_affairs" && Array.isArray(value)) {
+    return formatDescribedList(value, labels.loveAffair);
   }
   if (Array.isArray(value)) {
     return toList(value.filter(isNonEmptyString));
@@ -114,16 +144,30 @@ function formatLifepathValue(field, value) {
   return isNonEmptyString(value) ? toParagraphs([value]) : "";
 }
 
-function formatEnemy(enemy) {
+function formatEnemies(enemies, labels) {
+  const items = enemies.map((enemy) => formatEnemy(enemy, labels)).filter(Boolean);
+  return items.length > 0 ? `<ol>${items.join("<br>")}</ol>` : "";
+}
+
+function formatEnemy(enemy, labels) {
   if (!enemy || typeof enemy !== "object") return "";
-  const details = [
-    enemy.enemy,
-    enemy.cause,
-    enemy.wronged_party,
-    enemy.resources,
-    enemy.reaction
-  ].filter(isNonEmptyString);
-  return details.join(" — ");
+
+  const descriptions = Object.keys(DEFAULT_LIFEPATH_LABELS.enemy)
+    .filter((key) => isNonEmptyString(enemy[key]))
+    .map((key) => formatDescription(labels[key], enemy[key]));
+
+  return descriptions.length > 0 ? `<li>${descriptions.join("<br>")}</li>` : "";
+}
+
+function formatDescribedList(values, label) {
+  const items = values
+    .filter(isNonEmptyString)
+    .map((value) => `<li>${formatDescription(label, value)}</li>`);
+  return items.length > 0 ? `<ol>${items.join("")}</ol>` : "";
+}
+
+function formatDescription(label, value) {
+  return `<strong>${escapeHtml(label)}:</strong> ${escapeHtml(value)}`;
 }
 
 function toParagraphs(values) {
