@@ -1,11 +1,10 @@
-import { EXECUTION_MODES, MODULE_ID } from "../constants.js";
+import { MODULE_ID } from "../constants.js";
 import { getExecutionMode } from "../foundry/settings.js";
 import { createActorFromNpc } from "../foundry/actor-importer.js";
-import { collectDeveloperProject } from "../services/developer-project.js";
+import { buildGeneratorExecution } from "../services/generator-execution.js";
 import {
   generateNpc,
-  getGenerationOptions,
-  isGeneratorWorkerReady
+  getGenerationOptions
 } from "../services/generator-service.js";
 import {
   applyGenerationSettings,
@@ -13,6 +12,7 @@ import {
   saveGenerationSettings
 } from "../services/generation-settings.js";
 import { localizeOrFallback } from "../utils/localization.js";
+import { redactGenerationSecrets } from "../utils/logging.js";
 
 const VISIBLE_GROUPS = ["NPC Customization", "Generation settings"];
 
@@ -22,14 +22,16 @@ export async function openNpcGeneratorDialog() {
   }
 
   const executionMode = getExecutionMode();
-  const options = await getGenerationOptions(await buildExecution(executionMode));
+  const options = await getGenerationOptions(
+    await buildGeneratorExecution(executionMode)
+  );
   const settings = await loadGenerationSettings();
-  const fields = options.fields.map((field) => ({
+  const fields = applyGenerationSettings(options.fields.map((field) => ({
     ...field,
     nullable: field.default === null
-  }));
-  const visibleFields = applyGenerationSettings(fields, settings)
-    .filter((field) => VISIBLE_GROUPS.includes(field.group));
+  })), settings);
+  const visibleFields = fields.filter((field) => VISIBLE_GROUPS.includes(field.group));
+  const forbiddenSkills = readForbiddenSkills(fields);
   const content = await renderTemplate(
     `modules/${MODULE_ID}/templates/npc-generator-dialog.hbs`,
     buildViewModel(visibleFields)
@@ -43,7 +45,12 @@ export async function openNpcGeneratorDialog() {
         create: {
           icon: '<i class="fas fa-user-plus"></i>',
           label: localizeOrFallback("CreateActor", "Create Actor"),
-          callback: (html) => handleCreateActor(html, executionMode, visibleFields)
+          callback: (html) => handleCreateActor(
+            html,
+            executionMode,
+            visibleFields,
+            forbiddenSkills
+          )
         }
       },
       default: "create",
@@ -96,7 +103,15 @@ function getInputType(field) {
   return "text";
 }
 
-async function handleCreateActor(html, executionMode, fields) {
+function readForbiddenSkills(fields) {
+  const value = fields.find((field) => field.name === "forbidden_skills")?.default ?? [];
+  if (!Array.isArray(value) || value.some((name) => typeof name !== "string")) {
+    throw new Error("The forbidden_skills generation setting must be an array of strings.");
+  }
+  return value;
+}
+
+async function handleCreateActor(html, executionMode, fields, forbiddenSkills) {
   if (!game.user?.isGM) {
     ui.notifications.error(localizeOrFallback("OnlyGameMaster", "Only a Game Master can generate NPCs."));
     return;
@@ -108,11 +123,18 @@ async function handleCreateActor(html, executionMode, fields) {
   ui.notifications.info(localizeOrFallback("GenerationStarted", "NPC generation started."));
 
   try {
-    const generationOptions = readGenerationOptions(form, fields);
+    const generationOptions = {
+      ...readGenerationOptions(form, fields),
+      forbidden_skills: [...forbiddenSkills]
+    };
     await saveGenerationSettings(generationOptions);
+    console.log(
+      "NPC Generator | Generation parameters",
+      redactGenerationSecrets(generationOptions)
+    );
     const resultJson = await generateNpc(
       generationOptions,
-      await buildExecution(executionMode)
+      await buildGeneratorExecution(executionMode)
     );
     const result = JSON.parse(resultJson);
     console.log("NPC Generator | Generated NPC", result);
@@ -159,17 +181,6 @@ function readGenerationOptions(form, fields) {
     if (field.type === "int") return [field.name, Number.parseInt(value, 10)];
     return [field.name, value];
   }));
-}
-
-async function buildExecution(executionMode) {
-  const execution = { mode: executionMode };
-  if (
-    executionMode === EXECUTION_MODES.DEVELOPER
-    && !isGeneratorWorkerReady(executionMode)
-  ) {
-    Object.assign(execution, await collectDeveloperProject());
-  }
-  return execution;
 }
 
 function humanize(value) {

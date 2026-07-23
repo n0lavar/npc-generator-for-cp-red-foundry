@@ -158,6 +158,7 @@ json.dumps({
             "default": option.default,
             "group": option.group,
             "boolean": option.boolean,
+            "multiple": option.multiple,
         }
         for option in get_generation_options().fields
     ]

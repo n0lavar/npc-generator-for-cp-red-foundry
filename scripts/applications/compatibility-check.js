@@ -1,7 +1,6 @@
-import { EXECUTION_MODES, MODULE_ID } from "../constants.js";
-import { collectDeveloperProject } from "../services/developer-project.js";
-import { checkCompatibility } from "../services/compatibility-service.js";
-import { isGeneratorWorkerReady } from "../services/generator-service.js";
+import { MODULE_ID } from "../constants.js";
+import { refreshCompatibilityDefaults } from "../services/compatibility-defaults.js";
+import { buildGeneratorExecution } from "../services/generator-execution.js";
 import { localizeOrFallback } from "../utils/localization.js";
 
 export class CompatibilityCheck extends FormApplication {
@@ -15,7 +14,9 @@ export class CompatibilityCheck extends FormApplication {
     );
 
     try {
-      const report = await checkCompatibility(await buildExecution());
+      const report = await refreshCompatibilityDefaults(
+        await buildGeneratorExecution()
+      );
       logReport(report);
       const content = await renderTemplate(
         `modules/${MODULE_ID}/templates/compatibility-report.hbs`,
@@ -65,15 +66,6 @@ function logResult(name, result) {
     console.log("Missing:", result.missing);
   }
   console.groupEnd();
-}
-
-async function buildExecution() {
-  const mode = game.settings.get(MODULE_ID, "executionMode");
-  const execution = { mode };
-  if (mode === EXECUTION_MODES.DEVELOPER && !isGeneratorWorkerReady(mode)) {
-    Object.assign(execution, await collectDeveloperProject());
-  }
-  return execution;
 }
 
 function buildViewModel(report) {

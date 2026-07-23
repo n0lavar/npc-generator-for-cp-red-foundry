@@ -22,5 +22,6 @@
   "allow-junk": true,
   "allow-melee-weapon": true,
   "allow-ranged-weapon": true,
-  "allow-martial-arts": true
+  "allow-martial-arts": true,
+  "forbidden-skills": []
 }

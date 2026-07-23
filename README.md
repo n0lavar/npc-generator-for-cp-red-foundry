@@ -16,6 +16,11 @@ dialog, and changes made in the dialog are written back to that file. The file
 is stored in the browser's origin-private file system because Foundry modules
 cannot write into their installed module directory at runtime.
 
+For a GM, the module runs its compatibility check when the world becomes ready.
+Skills that are unavailable in the world and its Item compendiums are saved as
+the `forbidden-skills` default and are excluded from subsequent generation.
+Running the compatibility check manually refreshes the same default.
+
 The generator runs in a Web Worker through Pyodide. The module provides two
 GM-only execution modes:
 

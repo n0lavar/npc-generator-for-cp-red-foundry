@@ -7,17 +7,23 @@ import {
 const fields = [
   { name: "rank", default: "mook" },
   { name: "allow_description", default: false },
+  { name: "forbidden_skills", default: [] },
   { name: "unconfigured", default: 7 }
 ];
 
 assert.deepEqual(
   applyGenerationSettings(fields, {
     rank: "captain",
-    "allow-description": true
+    "allow-description": true,
+    "forbidden-skills": ["Science (Chemistry)"]
   }),
   [
     { name: "rank", default: "captain" },
     { name: "allow_description", default: true },
+    {
+      name: "forbidden_skills",
+      default: ["Science (Chemistry)"]
+    },
     { name: "unconfigured", default: 7 }
   ]
 );
