@@ -6,13 +6,6 @@ const BUNDLED_WHEEL_URL = new URL(
   "vendor/wheels/cp_red_npc_generator-0.1.0-py3-none-any.whl",
   MODULE_BASE_URL
 ).href;
-const PYTHON_DEPENDENCIES = [
-  "dataclass-wizard==0.35.0",
-  "result==0.17.0",
-  "tzdata==2025.1",
-  "Faker==40.31.0",
-  "Unidecode==1.4.0"
-];
 
 let pyodide;
 let initializedMode;
@@ -70,12 +63,7 @@ await micropip.install(${JSON.stringify(BUNDLED_WHEEL_URL)})
 `);
   } else if (mode === "developer") {
     writeDeveloperFiles(files);
-    pyodide.globals.set("dependency_specs_json", JSON.stringify(PYTHON_DEPENDENCIES));
-    await pyodide.runPythonAsync(`
-import json
-import micropip
-await micropip.install(json.loads(dependency_specs_json))
-`);
+    await installDeveloperDependencies();
     await configureDeveloperImportPath();
   } else {
     throw new Error(`Unknown execution mode: ${mode}`);
@@ -93,6 +81,34 @@ function writeDeveloperFiles(files) {
     pyodide.FS.mkdirTree(target.slice(0, separator));
     pyodide.FS.writeFile(target, new Uint8Array(file.bytes));
   }
+}
+
+async function installDeveloperDependencies() {
+  await pyodide.runPythonAsync(`
+import os
+import tomllib
+import micropip
+
+pyproject_path = "/developer-project/pyproject.toml"
+if not os.path.isfile(pyproject_path):
+    raise RuntimeError(
+        "The selected generator project does not contain pyproject.toml at its root."
+    )
+
+with open(pyproject_path, "rb") as pyproject_file:
+    pyproject = tomllib.load(pyproject_file)
+
+dependencies = pyproject.get("project", {}).get("dependencies")
+if not isinstance(dependencies, list) or not all(
+    isinstance(dependency, str) for dependency in dependencies
+):
+    raise RuntimeError(
+        "The selected generator project's pyproject.toml must define "
+        "project.dependencies as a list of package requirements."
+    )
+
+await micropip.install(dependencies)
+`);
 }
 
 async function configureDeveloperImportPath() {
