@@ -178,6 +178,11 @@ export function buildAmmoNameCandidates(name) {
 }
 
 const WEAPON_QUALITIES = new Set(["poor", "standard", "excellent"]);
+const WEAPON_QUALITY_LABELS = new Map([
+  ["poor", "Poor"],
+  ["standard", "Standard"],
+  ["excellent", "Excellent"]
+]);
 
 export function buildWeaponImportRequests(generatedWeapons) {
   const requests = [];
@@ -209,9 +214,10 @@ function isMartialArtsSkillName(name) {
 }
 
 export function buildWeaponNameCandidates({ name, beautifulName, quality }) {
+  const qualityLabel = WEAPON_QUALITY_LABELS.get(cleanName(quality).toLowerCase());
   const candidates = [
-    beautifulName && quality && `${beautifulName} (${quality})`,
-    name && quality && `${name} (${quality})`,
+    beautifulName && qualityLabel && `${beautifulName} (${qualityLabel})`,
+    name && qualityLabel && `${name} (${qualityLabel})`,
     beautifulName,
     name
   ].filter(Boolean);

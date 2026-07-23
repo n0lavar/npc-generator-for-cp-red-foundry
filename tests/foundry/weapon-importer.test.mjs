@@ -43,6 +43,68 @@ test("clones the first matching weapon candidate from an additional module compe
   assert.deepEqual(result, { unmatched: [] });
 });
 
+test("selects the generated quality variant instead of falling back to the standard weapon", async () => {
+  const poorSource = {
+    _id: "poor-sniper-id",
+    name: "Sniper Rifle (Poor)",
+    type: "weapon",
+    system: {
+      quality: "poor",
+      attackmod: 0,
+      price: { market: 100 },
+      equipped: "owned"
+    }
+  };
+  const standardSource = {
+    _id: "standard-sniper-id",
+    name: "Sniper Rifle",
+    type: "weapon",
+    system: {
+      quality: "standard",
+      attackmod: 0,
+      price: { market: 500 },
+      equipped: "owned"
+    }
+  };
+  const sourcesById = new Map([
+    [poorSource._id, poorSource],
+    [standardSource._id, standardSource]
+  ]);
+  const pack = {
+    documentName: "Item",
+    collection: "additional-module.weapons",
+    async getIndex() {
+      return [...sourcesById.values()]
+        .map(({ _id, name, type }) => ({ _id, name, type }));
+    },
+    async getDocument(id) {
+      return { toObject: () => structuredClone(sourcesById.get(id)) };
+    }
+  };
+  globalThis.game = { packs: new Map([[pack.collection, pack]]) };
+
+  let createdSource;
+  const actor = {
+    itemTypes: { skill: [] },
+    async createEmbeddedDocuments(_type, sources) {
+      [createdSource] = sources;
+    }
+  };
+
+  const result = await createWeapons(actor, [{
+    name: "Sniper Rifle",
+    beautiful_name: "GunMart \"Snipe-Star\"",
+    price: 100,
+    quality: "poor",
+    type: "weapon"
+  }]);
+
+  assert.deepEqual(result, { unmatched: [] });
+  assert.equal(createdSource.name, "Sniper Rifle (Poor)");
+  assert.equal(createdSource.system.quality, "poor");
+  assert.equal(createdSource.system.price.market, 100);
+});
+
 test("imports Unarmed even though the generator does not assign it a quality", async () => {
   const source = {
     _id: "unarmed-id",

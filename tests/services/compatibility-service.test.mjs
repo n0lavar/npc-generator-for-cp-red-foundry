@@ -34,7 +34,7 @@ test("reports a weapon when any quality has no matching candidate", () => {
       standard: "Federated Arms X-9mm",
       excellent: "Militech Avenger"
     }
-  }], ["Dai Lung Streetmaster (poor)", "Federated Arms X-9mm (standard)"]);
+  }], ["Dai Lung Streetmaster (Poor)", "Federated Arms X-9mm (Standard)"]);
 
   assert.deepEqual(result.missing, ["Medium Pistol"]);
 });

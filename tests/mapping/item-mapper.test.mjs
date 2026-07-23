@@ -206,8 +206,8 @@ test("builds weapon lookup candidates in contract order", () => {
     requests: [{
       name: "Medium Pistol",
       candidates: [
-        "Dai Lung Streetmaster (poor)",
-        "Medium Pistol (poor)",
+        "Dai Lung Streetmaster (Poor)",
+        "Medium Pistol (Poor)",
         "Dai Lung Streetmaster",
         "Medium Pistol"
       ],
