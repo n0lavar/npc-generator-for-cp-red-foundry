@@ -21,7 +21,11 @@ Hooks.once("ready", async () => {
   if (!game.user?.isGM) return;
 
   try {
-    await refreshCompatibilityDefaults(await buildGeneratorExecution());
+    const execution = await buildGeneratorExecution(undefined, {
+      interactive: false
+    });
+    if (!execution) return;
+    await refreshCompatibilityDefaults(execution);
   } catch (error) {
     console.error(
       "NPC Generator | Automatic compatibility check failed.",

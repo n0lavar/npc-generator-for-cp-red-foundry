@@ -3,10 +3,15 @@ import { getExecutionMode } from "../foundry/settings.js";
 import { collectDeveloperProject } from "./developer-project.js";
 import { isGeneratorWorkerReady } from "./generator-service.js";
 
-export async function buildGeneratorExecution(mode = getExecutionMode()) {
+export async function buildGeneratorExecution(
+  mode = getExecutionMode(),
+  { interactive = true } = {}
+) {
   const execution = { mode };
   if (mode === EXECUTION_MODES.DEVELOPER && !isGeneratorWorkerReady(mode)) {
-    Object.assign(execution, await collectDeveloperProject());
+    const project = await collectDeveloperProject({ interactive });
+    if (!project) return null;
+    Object.assign(execution, project);
   }
   return execution;
 }

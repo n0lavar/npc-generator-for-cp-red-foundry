@@ -35,19 +35,21 @@ export async function getDeveloperProjectName() {
   return handle?.name ?? null;
 }
 
-export async function collectDeveloperProject() {
+export async function collectDeveloperProject({ interactive = true } = {}) {
   let handle = await getStoredHandle();
   if (!handle) {
+    if (!interactive) return null;
     await selectDeveloperProject();
     handle = cachedHandle;
   }
 
   let permission = await handle.queryPermission({ mode: "read" });
-  if (permission === "prompt") {
+  if (permission === "prompt" && interactive) {
     permission = await handle.requestPermission({ mode: "read" });
   }
 
   if (permission !== "granted") {
+    if (!interactive) return null;
     await selectDeveloperProject();
     handle = cachedHandle;
   }
