@@ -10,6 +10,48 @@ export function buildActorName(npc) {
   return parts.join(" ");
 }
 
+const LIFEPATH_FIELDS = {
+  personality: "personality",
+  clothing_style: "clothingStyle",
+  hairstyle: "hairStyle",
+  affectation: "affectations",
+  value_most: "valueMost",
+  feel_about_people: "aboutPeople",
+  valued_person: "valuedPerson",
+  valued_possession: "valuedPossession",
+  family_background: "familyBackground",
+  childhood_environment: "childhoodEnvironment",
+  family_crisis: "familyCrisis",
+  friends: "friends",
+  enemies: "enemies",
+  tragic_love_affairs: "tragicLoveAffairs",
+  life_goal: "lifeGoals"
+};
+
+export function buildActorBiographyUpdate(npc) {
+  const update = {};
+  const lifepath = npc?.lifepath;
+
+  if (lifepath && typeof lifepath === "object" && !Array.isArray(lifepath)) {
+    const culturalOrigin = [lifepath.cultural_origin, lifepath.language]
+      .filter(isNonEmptyString);
+    if (culturalOrigin.length > 0) {
+      update["system.lifepath.culturalOrigin"] = toParagraphs(culturalOrigin);
+    }
+
+    for (const [generatorField, actorField] of Object.entries(LIFEPATH_FIELDS)) {
+      const html = formatLifepathValue(generatorField, lifepath[generatorField]);
+      if (html) update[`system.lifepath.${actorField}`] = html;
+    }
+  }
+
+  if (isNonEmptyString(npc?.description)) {
+    update["system.information.notes"] = toParagraphs([npc.description]);
+  }
+
+  return update;
+}
+
 export function buildStatUpdate(actorStats, generatedStats) {
   const availableStats = createNameIndex(Object.keys(actorStats ?? {}));
   const update = {};
@@ -57,4 +99,53 @@ function createNameIndex(names) {
 
 export function normalizeDocumentName(name) {
   return String(name).normalize("NFKD").replace(/[^\p{L}\p{N}]/gu, "").toLowerCase();
+}
+
+function formatLifepathValue(field, value) {
+  if (field === "family_background" && value && typeof value === "object") {
+    return toParagraphs([value.name, value.description].filter(isNonEmptyString));
+  }
+  if (field === "enemies" && Array.isArray(value)) {
+    return toList(value.map(formatEnemy).filter(Boolean));
+  }
+  if (Array.isArray(value)) {
+    return toList(value.filter(isNonEmptyString));
+  }
+  return isNonEmptyString(value) ? toParagraphs([value]) : "";
+}
+
+function formatEnemy(enemy) {
+  if (!enemy || typeof enemy !== "object") return "";
+  const details = [
+    enemy.enemy,
+    enemy.cause,
+    enemy.wronged_party,
+    enemy.resources,
+    enemy.reaction
+  ].filter(isNonEmptyString);
+  return details.join(" — ");
+}
+
+function toParagraphs(values) {
+  return values
+    .map((value) => `<p>${escapeHtml(value).replace(/\r?\n/g, "<br>")}</p>`)
+    .join("");
+}
+
+function toList(values) {
+  if (values.length === 0) return "";
+  return `<ol>${values.map((value) => `<li>${escapeHtml(value)}</li>`).join("")}</ol>`;
+}
+
+function isNonEmptyString(value) {
+  return typeof value === "string" && Boolean(value.trim());
+}
+
+function escapeHtml(value) {
+  return String(value).trim()
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 }

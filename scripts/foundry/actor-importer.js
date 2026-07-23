@@ -1,4 +1,5 @@
 import {
+  buildActorBiographyUpdate,
   buildActorName,
   buildStatUpdate
 } from "../mapping/actor-mapper.js";
@@ -28,6 +29,10 @@ export async function createActorFromNpc(npc) {
 
     if (Object.keys(statMapping.update).length > 0) {
       await actor.update(statMapping.update);
+    }
+    const biographyUpdate = buildActorBiographyUpdate(npc);
+    if (Object.keys(biographyUpdate).length > 0) {
+      await actor.update(biographyUpdate);
     }
     await initializeDerivedResources(actor);
     const cyberwareResult = await createCyberware(actor, npc.cyberware);
