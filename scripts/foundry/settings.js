@@ -4,6 +4,30 @@ import { CompatibilityCheck } from "../applications/compatibility-check.js";
 import { localizeOrFallback } from "../utils/localization.js";
 
 export function registerSettings() {
+  game.settings.register(MODULE_ID, "openCreatedNpc", {
+    name: localizeOrFallback("OpenCreatedNpc", "Open created NPC"),
+    hint: localizeOrFallback(
+      "OpenCreatedNpcHint",
+      "Open the NPC character sheet after the Actor is created."
+    ),
+    scope: "client",
+    config: true,
+    type: Boolean,
+    default: true
+  });
+
+  game.settings.registerMenu(MODULE_ID, "compatibilityCheck", {
+    name: localizeOrFallback("CheckCompatibility", "Check compatibility"),
+    hint: localizeOrFallback(
+      "CheckCompatibilityHint",
+      "Compare generator stats, skills, and item names with documents available in Foundry."
+    ),
+    label: localizeOrFallback("CheckCompatibility", "Check compatibility"),
+    icon: "fas fa-vial",
+    type: CompatibilityCheck,
+    restricted: true
+  });
+
   game.settings.register(MODULE_ID, "executionMode", {
     name: localizeOrFallback("ExecutionMode", "Execution mode"),
     hint: localizeOrFallback(
@@ -31,22 +55,12 @@ export function registerSettings() {
     type: DeveloperProjectSettings,
     restricted: true
   });
-
-  game.settings.registerMenu(MODULE_ID, "compatibilityCheck", {
-    name: localizeOrFallback("CheckCompatibility", "Check compatibility"),
-    hint: localizeOrFallback(
-      "CheckCompatibilityHint",
-      "Compare generator stats, skills, and item names with documents available in Foundry."
-    ),
-    label: localizeOrFallback("CheckCompatibility", "Check compatibility"),
-    icon: "fas fa-vial",
-    type: CompatibilityCheck,
-    restricted: true
-  });
 }
 
 export function registerSettingsVisibilityHook() {
   Hooks.on("renderSettingsConfig", (_application, html) => {
+    reorderModuleSettings(html);
+
     if (game.user?.isGM) return;
 
     html
@@ -56,6 +70,35 @@ export function registerSettingsVisibilityHook() {
   });
 }
 
+function reorderModuleSettings(html) {
+  const root = html[0] ?? html;
+  const selectors = [
+    `[name="${MODULE_ID}.openCreatedNpc"]`,
+    `[data-key="${MODULE_ID}.compatibilityCheck"]`,
+    `[name="${MODULE_ID}.executionMode"]`,
+    `[data-key="${MODULE_ID}.developerProject"]`
+  ];
+  const groups = selectors
+    .map((selector) => root.querySelector(selector)?.closest(".form-group"))
+    .filter(Boolean);
+
+  if (groups.length !== selectors.length) return;
+
+  const anchor = groups.reduce((first, group) => (
+    first.compareDocumentPosition(group) & Node.DOCUMENT_POSITION_PRECEDING
+      ? group
+      : first
+  ));
+  const marker = anchor.ownerDocument.createComment(`${MODULE_ID}-settings-order`);
+  anchor.before(marker);
+  marker.before(...groups);
+  marker.remove();
+}
+
 export function getExecutionMode() {
   return game.settings.get(MODULE_ID, "executionMode");
+}
+
+export function getOpenCreatedNpc() {
+  return game.settings.get(MODULE_ID, "openCreatedNpc");
 }

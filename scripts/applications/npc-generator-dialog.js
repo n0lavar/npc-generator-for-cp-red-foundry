@@ -1,5 +1,8 @@
 import { MODULE_ID } from "../constants.js";
-import { getExecutionMode } from "../foundry/settings.js";
+import {
+  getExecutionMode,
+  getOpenCreatedNpc
+} from "../foundry/settings.js";
 import { createActorFromNpc } from "../foundry/actor-importer.js";
 import { buildGeneratorExecution } from "../services/generator-execution.js";
 import {
@@ -143,6 +146,7 @@ async function handleCreateActor(html, executionMode, fields, forbiddenSkills) {
       localizeOrFallback("ActorCreated", "Actor created: {name}")
         .replace("{name}", actor.name)
     );
+    if (getOpenCreatedNpc()) actor.sheet.render(true);
   } catch (error) {
     console.error("NPC Generator | NPC generation failed.", error);
     ui.notifications.error(

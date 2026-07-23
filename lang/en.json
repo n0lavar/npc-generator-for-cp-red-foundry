@@ -26,6 +26,8 @@
   "npc_generator_for_cp_red_foundry.ModelBaseUrl": "Model base URL",
   "npc_generator_for_cp_red_foundry.ModelLanguage": "Model language",
   "npc_generator_for_cp_red_foundry.OnlyGameMaster": "Only a Game Master can generate NPCs.",
+  "npc_generator_for_cp_red_foundry.OpenCreatedNpc": "Open created NPC",
+  "npc_generator_for_cp_red_foundry.OpenCreatedNpcHint": "Open the NPC character sheet after the Actor is created.",
   "npc_generator_for_cp_red_foundry.ExecutionMode": "Execution mode",
   "npc_generator_for_cp_red_foundry.ExecutionModeHint": "Use the bundled generator or load a local Python project for development.",
   "npc_generator_for_cp_red_foundry.BundledMode": "Bundled",
