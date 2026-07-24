@@ -5,6 +5,7 @@ import {
   buildAmmoImportRequests,
   buildArmorImportRequests,
   buildCyberwareImportRequests,
+  getCyberwareArmorName,
   buildEquipmentImportRequests,
   buildJunkImportRequests,
   buildWeaponImportRequests
@@ -101,6 +102,13 @@ test("maps renamed Developer mode cyberware containers to current Foundry names"
     ],
     unmatched: []
   });
+});
+
+test("maps armor cyberware to its CPR companion Armor Item", () => {
+  assert.equal(getCyberwareArmorName("Skin Weave"), "Skin Weave");
+  assert.equal(getCyberwareArmorName("Subdermal Armor"), "Subdermal Armor");
+  assert.equal(getCyberwareArmorName("FleshWeave"), "FleshWeave (Armor)");
+  assert.equal(getCyberwareArmorName("Subdermal Pocket"), null);
 });
 
 test("maps popup cyberware variants to generic Foundry items and weapon types", () => {

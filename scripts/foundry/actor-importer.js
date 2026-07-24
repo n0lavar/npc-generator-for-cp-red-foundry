@@ -50,7 +50,10 @@ export async function createActorFromNpc(npc, onProgress, tokenDisposition = -1)
     onProgress?.("importingCyberware");
     const cyberwareResult = await createCyberware(actor, npc.cyberware);
     onProgress?.("importingArmor");
-    const armorResult = await createAndEquipArmor(actor, npc.armor);
+    const armorResult = await createAndEquipArmor(
+      actor,
+      [...(npc.armor ?? []), ...cyberwareResult.armor]
+    );
     onProgress?.("importingWeapons");
     const weaponResult = await createWeapons(actor, npc.weapons);
     onProgress?.("importingInventory");

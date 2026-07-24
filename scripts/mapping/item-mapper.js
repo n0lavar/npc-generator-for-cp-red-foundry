@@ -31,6 +31,12 @@ const CYBERWARE_NAME_MAPPINGS = new Map([
   ["External Cyberware", "External (7 Option Slots)"]
 ]);
 
+const CYBERWARE_ARMOR_MAPPINGS = new Map([
+  ["Skin Weave", "Skin Weave"],
+  ["Subdermal Armor", "Subdermal Armor"],
+  ["FleshWeave", "FleshWeave (Armor)"]
+]);
+
 const POPUP_CYBERWARE_MAPPINGS = new Map([
   ["Popup Melee Weapon (Light)", { name: "Popup Melee Weapon", weaponType: "lightMelee" }],
   ["Popup Melee Weapon (Medium)", { name: "Popup Melee Weapon", weaponType: "medMelee" }],
@@ -47,6 +53,10 @@ export function buildCyberwareItemMapping(name) {
     return { candidates: [popupMapping.name], weaponType: popupMapping.weaponType };
   }
   return { candidates: [CYBERWARE_NAME_MAPPINGS.get(name) ?? name] };
+}
+
+export function getCyberwareArmorName(name) {
+  return CYBERWARE_ARMOR_MAPPINGS.get(name) ?? null;
 }
 
 export function buildCyberwareImportRequests(generatedCyberware) {

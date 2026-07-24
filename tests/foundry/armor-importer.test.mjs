@@ -49,3 +49,50 @@ test("clones armor from an additional module compendium and tracks its location"
   assert.deepEqual(result.unmatched, []);
   assert.deepEqual(tracked, [["body", "actor-item-id"]]);
 });
+
+test("equips and tracks companion cyberware armor for head and body", async () => {
+  const compendiumSource = {
+    _id: "subdermal-armor-id",
+    name: "Subdermal Armor",
+    type: "armor",
+    system: {
+      equipped: "owned",
+      isBodyLocation: true,
+      isHeadLocation: true,
+      isShield: false,
+      penalty: 0,
+      bodyLocation: { sp: 11, ablation: 0 },
+      headLocation: { sp: 11, ablation: 0 }
+    }
+  };
+  const pack = {
+    documentName: "Item",
+    collection: "cyberpunk-red-core.core_armor",
+    async getIndex() {
+      return [{ _id: compendiumSource._id, name: compendiumSource.name, type: "armor" }];
+    },
+    async getDocument() {
+      return { toObject: () => structuredClone(compendiumSource) };
+    }
+  };
+  globalThis.game = { packs: new Map([[pack.collection, pack]]) };
+
+  const tracked = [];
+  const actor = {
+    async createEmbeddedDocuments(_type, sources) {
+      assert.equal(sources[0].system.equipped, "equipped");
+      return [{ id: "actor-subdermal-armor-id", system: sources[0].system }];
+    },
+    async updateTrackedArmor(location, id) {
+      tracked.push([location, id]);
+    }
+  };
+
+  const result = await createAndEquipArmor(actor, [{ name: "Subdermal Armor" }]);
+
+  assert.deepEqual(result.unmatched, []);
+  assert.deepEqual(tracked, [
+    ["head", "actor-subdermal-armor-id"],
+    ["body", "actor-subdermal-armor-id"]
+  ]);
+});

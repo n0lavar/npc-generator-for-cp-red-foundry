@@ -68,7 +68,7 @@ test("reuses core cyberware and installs cloned children through the system life
   assert.equal(createdSources[0]._id, undefined);
   assert.equal(createdSources[0].img, "chemskin.svg");
   assert.equal(installed.length, 2);
-  assert.deepEqual(result, { created: 2, unmatched: [] });
+  assert.deepEqual(result, { created: 2, unmatched: [], armor: [] });
 });
 
 test("sets the selected weapon type on generic popup cyberware", async () => {
@@ -110,5 +110,99 @@ test("sets the selected weapon type on generic popup cyberware", async () => {
 
   assert.equal(createdSource.name, "Popup Ranged Weapon");
   assert.equal(createdSource.system.weaponType, "smg");
-  assert.deepEqual(result, { created: 1, unmatched: [] });
+  assert.deepEqual(result, { created: 1, unmatched: [], armor: [] });
+});
+
+test("requests companion armor after installing armor cyberware", async () => {
+  const source = {
+    _id: "subdermal-id",
+    name: "Subdermal Armor",
+    type: "cyberware",
+    system: { core: false, size: 1 }
+  };
+  const pack = {
+    documentName: "Item",
+    collection: "cyberpunk-red-core.core_cyberware",
+    async getIndex() {
+      return [{ _id: source._id, name: source.name, type: source.type }];
+    },
+    async getDocument() {
+      return { toObject: () => structuredClone(source) };
+    }
+  };
+  globalThis.game = { packs: new Map([[pack.collection, pack]]) };
+
+  const actor = {
+    itemTypes: { cyberware: [] },
+    async createEmbeddedDocuments(_type, sources) {
+      return sources.map((createdSource) => ({
+        ...createdSource,
+        id: "created-subdermal",
+        async delete() {}
+      }));
+    },
+    async installItems() {
+      return true;
+    }
+  };
+
+  const result = await createCyberware(actor, [{
+    item: { name: "Subdermal Armor" },
+    children: []
+  }]);
+
+  assert.deepEqual(result, {
+    created: 1,
+    unmatched: [],
+    armor: [{ name: "Subdermal Armor" }]
+  });
+});
+
+test("does not request companion armor when armor cyberware installation fails", async () => {
+  const source = {
+    _id: "subdermal-id",
+    name: "Subdermal Armor",
+    type: "cyberware",
+    system: { core: false, size: 1 }
+  };
+  const pack = {
+    documentName: "Item",
+    collection: "cyberpunk-red-core.core_cyberware",
+    async getIndex() {
+      return [{ _id: source._id, name: source.name, type: source.type }];
+    },
+    async getDocument() {
+      return { toObject: () => structuredClone(source) };
+    }
+  };
+  globalThis.game = { packs: new Map([[pack.collection, pack]]) };
+
+  let deleted = false;
+  const actor = {
+    itemTypes: { cyberware: [] },
+    async createEmbeddedDocuments(_type, sources) {
+      return [{
+        ...sources[0],
+        id: "created-subdermal",
+        async delete() {
+          deleted = true;
+        }
+      }];
+    },
+    async installItems() {
+      return false;
+    }
+  };
+
+  const result = await createCyberware(actor, [{
+    item: { name: "Subdermal Armor" },
+    children: []
+  }]);
+
+  assert.equal(deleted, true);
+  assert.deepEqual(result, {
+    created: 0,
+    unmatched: ["Subdermal Armor"],
+    armor: []
+  });
 });

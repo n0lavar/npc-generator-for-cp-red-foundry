@@ -100,6 +100,22 @@ test("matches popup cyberware variants to generic Foundry items", () => {
   });
 });
 
+test("requires the companion Armor Item for armor cyberware", () => {
+  const missingArmor = buildCyberwareResult(
+    ["Subdermal Armor"],
+    ["Subdermal Armor"],
+    []
+  );
+  const complete = buildCyberwareResult(
+    ["Subdermal Armor"],
+    ["Subdermal Armor"],
+    ["Subdermal Armor"]
+  );
+
+  assert.deepEqual(missingArmor.missing, ["Subdermal Armor"]);
+  assert.deepEqual(complete.missing, []);
+});
+
 test("uses the same exact cyberware candidates as import", () => {
   const result = buildCyberwareResult(
     ["Spray Paint Cyber Finger", "Scrambler / Descrambler"],

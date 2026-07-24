@@ -2,6 +2,7 @@ import { normalizeDocumentName } from "../mapping/actor-mapper.js";
 import {
   buildAmmoNameCandidates,
   buildCyberwareItemMapping,
+  getCyberwareArmorName,
   buildWeaponNameCandidates
 } from "../mapping/item-mapper.js";
 import { collectCompendiumItemEntries } from "../foundry/item-compendium.js";
@@ -37,6 +38,9 @@ export async function checkCompatibility(execution, onProgress) {
   const ammoNames = documents
     .filter((document) => document.type === "ammo")
     .map((document) => document.name);
+  const cyberwareNames = documents
+    .filter((document) => document.type === "cyberware")
+    .map((document) => document.name);
 
   return {
     stats: buildNormalizedResult(catalog.stats, statNames),
@@ -48,18 +52,27 @@ export async function checkCompatibility(execution, onProgress) {
         : name === "Ammo"
           ? buildAmmoResult(expected, ammoNames)
           : name === "Cyberware"
-            ? buildCyberwareResult(expected, itemNames)
+            ? buildCyberwareResult(expected, cyberwareNames, armorNames)
             : buildResult(expected, name === "Armor" ? armorNames : itemNames))
     }))
   };
 }
 
-export function buildCyberwareResult(cyberwareNames, availableNames) {
+export function buildCyberwareResult(
+  cyberwareNames,
+  availableNames,
+  availableArmorNames = []
+) {
   const expected = [...new Set(cyberwareNames
     .filter((name) => !TECHNICAL_CYBERWARE_NAMES.has(name)))];
   const available = new Set(availableNames);
-  const missing = expected.filter((name) => !buildCyberwareItemMapping(name).candidates
-    .some((candidate) => available.has(candidate)));
+  const availableArmor = new Set(availableArmorNames);
+  const missing = expected.filter((name) => {
+    const cyberwareFound = buildCyberwareItemMapping(name).candidates
+      .some((candidate) => available.has(candidate));
+    const armorName = getCyberwareArmorName(name);
+    return !cyberwareFound || (armorName != null && !availableArmor.has(armorName));
+  });
   return {
     found: expected.length - missing.length,
     total: expected.length,

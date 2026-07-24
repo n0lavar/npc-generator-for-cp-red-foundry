@@ -1,4 +1,7 @@
-import { buildCyberwareImportRequests } from "../mapping/item-mapper.js";
+import {
+  buildCyberwareImportRequests,
+  getCyberwareArmorName
+} from "../mapping/item-mapper.js";
 import { collectCompendiumItemEntries } from "./item-compendium.js";
 
 export async function createCyberware(actor, generatedCyberware) {
@@ -6,6 +9,7 @@ export async function createCyberware(actor, generatedCyberware) {
   const itemsByName = await buildCyberwareIndex();
   const importedByRequestIndex = new Map();
   const unmatched = [...mapping.unmatched];
+  const armor = [];
   let created = 0;
 
   for (const [requestIndex, request] of mapping.requests.entries()) {
@@ -48,10 +52,12 @@ export async function createCyberware(actor, generatedCyberware) {
     }
 
     importedByRequestIndex.set(requestIndex, createdItem);
+    const armorName = getCyberwareArmorName(request.name);
+    if (armorName) armor.push({ name: armorName });
     created += 1;
   }
 
-  return { created, unmatched };
+  return { created, unmatched, armor };
 }
 
 async function buildCyberwareIndex() {
