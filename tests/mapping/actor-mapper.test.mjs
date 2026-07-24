@@ -2,11 +2,26 @@ import assert from "node:assert/strict";
 import {
   buildActorBiographyUpdate,
   buildActorName,
+  buildPrototypeTokenSource,
+  buildPrototypeTokenUpdate,
   buildSkillUpdates,
   buildStatUpdate
 } from "../../scripts/mapping/actor-mapper.js";
 
 assert.equal(buildActorName({ name: "Morgan", surname: "Blackhand" }), "Morgan Blackhand");
+
+assert.deepEqual(buildPrototypeTokenSource(-2), { disposition: -2, displayName: 0 });
+assert.deepEqual(buildPrototypeTokenSource(-1), { disposition: -1, displayName: 0 });
+assert.deepEqual(buildPrototypeTokenSource(0), { disposition: 0, displayName: 50 });
+assert.deepEqual(buildPrototypeTokenSource(1), { disposition: 1, displayName: 50 });
+assert.deepEqual(buildPrototypeTokenUpdate(-1), {
+  "prototypeToken.disposition": -1,
+  "prototypeToken.displayName": 0
+});
+assert.throws(
+  () => buildPrototypeTokenSource(2),
+  /Unsupported Token Disposition/
+);
 
 const statMapping = buildStatUpdate(
   { ref: { value: 6 }, luck: { value: 6, max: 6 } },

@@ -81,5 +81,11 @@
   "npc_generator_for_cp_red_foundry.EnemyCause": "Cause",
   "npc_generator_for_cp_red_foundry.EnemyWrongedParty": "Wronged party",
   "npc_generator_for_cp_red_foundry.EnemyResources": "Resources",
-  "npc_generator_for_cp_red_foundry.EnemyReaction": "Reaction"
+  "npc_generator_for_cp_red_foundry.EnemyReaction": "Reaction",
+  "npc_generator_for_cp_red_foundry.TokenDisposition": "Token Disposition",
+  "npc_generator_for_cp_red_foundry.TokenDispositionHint": "Changes the Prototype Token's Token Disposition. Neutral and Friendly tokens show their name to players. Secret and Hostile tokens hide it.",
+  "npc_generator_for_cp_red_foundry.TokenDispositionSecret": "Secret",
+  "npc_generator_for_cp_red_foundry.TokenDispositionHostile": "Hostile",
+  "npc_generator_for_cp_red_foundry.TokenDispositionNeutral": "Neutral",
+  "npc_generator_for_cp_red_foundry.TokenDispositionFriendly": "Friendly"
 }

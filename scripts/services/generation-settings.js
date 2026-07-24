@@ -2,6 +2,7 @@ import { MODULE_ID } from "../constants.js";
 
 const SETTINGS_FILE_NAME = "settings.json";
 const SETTINGS_EXAMPLE_URL = `modules/${MODULE_ID}/settings.example.json`;
+const TOKEN_DISPOSITIONS = new Set([-2, -1, 0, 1]);
 
 /**
  * Loads the persistent generation settings, creating settings.json from the
@@ -37,6 +38,15 @@ export function applyGenerationSettings(fields, settings) {
     const value = readSetting(settings, field.name);
     return value.found ? { ...field, default: value.value } : field;
   });
+}
+
+export function readTokenDispositionSetting(settings, fallback = -1) {
+  const setting = readSetting(settings, "token_disposition");
+  if (!setting.found) return fallback;
+  if (!TOKEN_DISPOSITIONS.has(setting.value)) {
+    throw new Error("token_disposition must be one of -2, -1, 0, or 1.");
+  }
+  return setting.value;
 }
 
 export function mergeGenerationSettings(settings, values) {

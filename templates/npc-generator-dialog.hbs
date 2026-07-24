@@ -1,4 +1,19 @@
 <form class="npc-generator-form">
+  <fieldset>
+    <legend>{{token.label}}</legend>
+    <div class="npc-generator-select-field">
+      <div class="npc-generator-field-control">
+        <label for="npc-generator-token-disposition">{{token.label}}</label>
+        <select id="npc-generator-token-disposition" name="tokenDisposition">
+          {{#each token.options}}
+            <option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>
+          {{/each}}
+        </select>
+      </div>
+      <p class="notes">{{token.help}}</p>
+    </div>
+  </fieldset>
+
   {{#each groups}}
     <fieldset>
       <legend>{{label}}</legend>

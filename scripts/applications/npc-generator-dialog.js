@@ -14,6 +14,7 @@ import {
 import {
   applyGenerationSettings,
   loadGenerationSettings,
+  readTokenDispositionSetting,
   saveGenerationSettings
 } from "../services/generation-settings.js";
 import { localizeOrFallback } from "../utils/localization.js";
@@ -21,6 +22,7 @@ import { redactGenerationSecrets } from "../utils/logging.js";
 import { createStatusDialog } from "./status-dialog.js";
 
 const VISIBLE_GROUPS = ["NPC Customization", "Generation settings"];
+const DEFAULT_TOKEN_DISPOSITION = -1;
 
 export async function openNpcGeneratorDialog() {
   if (!game.user?.isGM) {
@@ -61,7 +63,10 @@ export async function openNpcGeneratorDialog() {
   const forbiddenSkills = readForbiddenSkills(fields);
   const content = await renderTemplate(
     `modules/${MODULE_ID}/templates/npc-generator-dialog.hbs`,
-    buildViewModel(visibleFields)
+    buildViewModel(
+      visibleFields,
+      readTokenDispositionSetting(settings, DEFAULT_TOKEN_DISPOSITION)
+    )
   );
 
   new Dialog(
@@ -87,8 +92,25 @@ export async function openNpcGeneratorDialog() {
   ).render(true);
 }
 
-function buildViewModel(fields) {
+function buildViewModel(fields, tokenDisposition) {
   return {
+    token: {
+      label: localizeOrFallback("TokenDisposition", "Token Disposition"),
+      help: localizeOrFallback(
+        "TokenDispositionHint",
+        "Changes the Prototype Token's Token Disposition. Neutral and Friendly tokens show their name to players. Secret and Hostile tokens hide it."
+      ),
+      options: [
+        ["Secret", -2],
+        ["Hostile", -1],
+        ["Neutral", 0],
+        ["Friendly", 1]
+      ].map(([key, value]) => ({
+        value,
+        label: localizeOrFallback(`TokenDisposition${key}`, key),
+        selected: value === tokenDisposition
+      }))
+    },
     groups: VISIBLE_GROUPS.map((group) => ({
       label: group,
       fields: fields.filter((field) => field.group === group).map(buildFieldViewModel)
@@ -158,7 +180,11 @@ async function handleCreateActor(html, executionMode, fields, forbiddenSkills) {
       ...readGenerationOptions(form, fields),
       forbidden_skills: [...forbiddenSkills]
     };
-    await saveGenerationSettings(generationOptions);
+    const tokenDisposition = readTokenDisposition(form);
+    await saveGenerationSettings({
+      ...generationOptions,
+      token_disposition: tokenDisposition
+    });
     console.log(
       "NPC Generator | Generation parameters",
       redactGenerationSecrets(generationOptions)
@@ -179,7 +205,7 @@ async function handleCreateActor(html, executionMode, fields, forbiddenSkills) {
     console.log("NPC Generator | Generated NPC", result);
     const actor = await createActorFromNpc(result, (stage) => {
       updateImportStatus(status, stage);
-    });
+    }, tokenDisposition);
     status.complete("StatusActorCreated", "Actor created.");
     if (getOpenCreatedNpc()) actor.sheet.render(true);
   } catch (error) {
@@ -191,6 +217,14 @@ async function handleCreateActor(html, executionMode, fields, forbiddenSkills) {
       );
     }
   }
+}
+
+function readTokenDisposition(form) {
+  const value = Number.parseInt(new FormData(form).get("tokenDisposition"), 10);
+  if (![-2, -1, 0, 1].includes(value)) {
+    throw new Error(`Unsupported Token Disposition: ${value}.`);
+  }
+  return value;
 }
 
 function updateImportStatus(status, stage) {
@@ -217,7 +251,10 @@ function registerSettingsPersistence(html, fields) {
     window.clearTimeout(saveTimer);
     saveTimer = window.setTimeout(async () => {
       try {
-        await saveGenerationSettings(readGenerationOptions(form, fields));
+        await saveGenerationSettings({
+          ...readGenerationOptions(form, fields),
+          token_disposition: readTokenDisposition(form)
+        });
       } catch (error) {
         console.error("NPC Generator | Failed to save generation settings.", error);
         ui.notifications.error(

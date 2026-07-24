@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import {
   applyGenerationSettings,
-  mergeGenerationSettings
+  mergeGenerationSettings,
+  readTokenDispositionSetting
 } from "../../scripts/services/generation-settings.js";
 
 const fields = [
@@ -28,6 +29,14 @@ assert.deepEqual(
   ]
 );
 assert.equal(fields[0].default, "mook", "input fields must not be mutated");
+
+assert.equal(readTokenDispositionSetting({ token_disposition: 0 }), 0);
+assert.equal(readTokenDispositionSetting({ "token-disposition": 1 }), 1);
+assert.equal(readTokenDispositionSetting({}), -1);
+assert.throws(
+  () => readTokenDispositionSetting({ token_disposition: 2 }),
+  /token_disposition/
+);
 
 assert.deepEqual(
   mergeGenerationSettings(

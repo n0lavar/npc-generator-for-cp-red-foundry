@@ -10,6 +10,34 @@ export function buildActorName(npc) {
   return parts.join(" ");
 }
 
+const TOKEN_DISPOSITIONS = new Set([-2, -1, 0, 1]);
+const VISIBLE_NAME_DISPOSITIONS = new Set([0, 1]);
+const TOKEN_DISPLAY_MODES = {
+  NONE: 0,
+  ALWAYS: 50
+};
+
+export function buildPrototypeTokenSource(disposition) {
+  if (!TOKEN_DISPOSITIONS.has(disposition)) {
+    throw new Error(`Unsupported Token Disposition: ${disposition}.`);
+  }
+
+  return {
+    disposition,
+    displayName: VISIBLE_NAME_DISPOSITIONS.has(disposition)
+      ? TOKEN_DISPLAY_MODES.ALWAYS
+      : TOKEN_DISPLAY_MODES.NONE
+  };
+}
+
+export function buildPrototypeTokenUpdate(disposition) {
+  const token = buildPrototypeTokenSource(disposition);
+  return {
+    "prototypeToken.disposition": token.disposition,
+    "prototypeToken.displayName": token.displayName
+  };
+}
+
 const LIFEPATH_FIELDS = {
   personality: "personality",
   clothing_style: "clothingStyle",

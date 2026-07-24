@@ -1,6 +1,8 @@
 import {
   buildActorBiographyUpdate,
   buildActorName,
+  buildPrototypeTokenSource,
+  buildPrototypeTokenUpdate,
   buildStatUpdate
 } from "../mapping/actor-mapper.js";
 import { createAndEquipArmor } from "./armor-importer.js";
@@ -15,16 +17,21 @@ import { localizeOrFallback } from "../utils/localization.js";
 
 const ACTOR_TYPE = "character";
 
-export async function createActorFromNpc(npc, onProgress) {
+export async function createActorFromNpc(npc, onProgress, tokenDisposition = -1) {
   validateNpc(npc);
 
   onProgress?.("creatingActor");
   const actor = await CONFIG.Actor.documentClass.create({
     name: buildActorName(npc),
-    type: ACTOR_TYPE
+    type: ACTOR_TYPE,
+    prototypeToken: buildPrototypeTokenSource(tokenDisposition)
   });
 
   try {
+    // The Cyberpunk RED Actor creation lifecycle initializes prototype tokens
+    // as Friendly, so enforce the user's selection after creation completes.
+    await actor.update(buildPrototypeTokenUpdate(tokenDisposition));
+
     const statMapping = buildStatUpdate(actor.system.stats, npc.stats);
     onProgress?.("importingSkills");
     const skillResult = await importSkills(actor, npc.skills);
