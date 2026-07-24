@@ -5,6 +5,7 @@
   "npc_generator_for_cp_red_foundry.ShowStatusDialogs": "Show status dialogs",
   "npc_generator_for_cp_red_foundry.ShowStatusDialogsHint": "Show a small window with the current stage of generator operations.",
   "npc_generator_for_cp_red_foundry.StatusDialogTitle": "NPC Generator",
+  "npc_generator_for_cp_red_foundry.StatusReadingDeveloperProject": "Selecting and reading Developer project…",
   "npc_generator_for_cp_red_foundry.StatusLoadingGenerator": "Loading generator module…",
   "npc_generator_for_cp_red_foundry.StatusGeneratorReady": "Generator module loaded.",
   "npc_generator_for_cp_red_foundry.StatusGeneratorLoadFailed": "Generator module could not be loaded. See the console.",

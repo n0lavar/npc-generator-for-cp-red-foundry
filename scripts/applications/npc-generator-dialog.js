@@ -1,4 +1,4 @@
-import { MODULE_ID } from "../constants.js";
+import { EXECUTION_MODES, MODULE_ID } from "../constants.js";
 import {
   getExecutionMode,
   getOpenCreatedNpc,
@@ -9,6 +9,7 @@ import { buildGeneratorExecution } from "../services/generator-execution.js";
 import {
   generateNpc,
   getGenerationOptions,
+  hasGeneratorWorker,
   isGeneratorWorkerReady
 } from "../services/generator-service.js";
 import {
@@ -30,17 +31,26 @@ export async function openNpcGeneratorDialog() {
   }
 
   const executionMode = getExecutionMode();
-  const execution = await buildGeneratorExecution(executionMode);
+  const needsDeveloperProject = executionMode === EXECUTION_MODES.DEVELOPER
+    && !hasGeneratorWorker(executionMode);
   const needsLoadingStatus = !isGeneratorWorkerReady(executionMode);
   const loadingStatus = needsLoadingStatus
     ? createStatusDialog(
-      "StatusLoadingGenerator",
-      "Loading generator module…",
+      needsDeveloperProject ? "StatusReadingDeveloperProject" : "StatusLoadingGenerator",
+      needsDeveloperProject
+        ? "Selecting and reading Developer project…"
+        : "Loading generator module…",
       getShowStatusDialogs()
     )
     : null;
   let options;
   try {
+    const execution = await buildGeneratorExecution(executionMode);
+    if (!execution) {
+      loadingStatus?.close();
+      return;
+    }
+    loadingStatus?.update("StatusLoadingGenerator", "Loading generator module…");
     options = await getGenerationOptions(execution, (stage) => {
       if (stage === "ready") {
         loadingStatus?.update("StatusGeneratorReady", "Generator module loaded.");
@@ -189,9 +199,23 @@ async function handleCreateActor(html, executionMode, fields, forbiddenSkills) {
       "NPC Generator | Generation parameters",
       redactGenerationSecrets(generationOptions)
     );
+    if (
+      executionMode === EXECUTION_MODES.DEVELOPER
+      && !hasGeneratorWorker(executionMode)
+    ) {
+      status.update(
+        "StatusReadingDeveloperProject",
+        "Selecting and reading Developer project…"
+      );
+    }
+    const execution = await buildGeneratorExecution(executionMode);
+    if (!execution) {
+      status.close();
+      return;
+    }
     const resultJson = await generateNpc(
       generationOptions,
-      await buildGeneratorExecution(executionMode),
+      execution,
       (stage) => {
         if (stage === "initializing") {
           status.update("StatusLoadingGenerator", "Loading generator module…");

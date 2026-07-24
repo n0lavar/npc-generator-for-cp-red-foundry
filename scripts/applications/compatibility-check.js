@@ -1,7 +1,10 @@
-import { MODULE_ID } from "../constants.js";
+import { EXECUTION_MODES, MODULE_ID } from "../constants.js";
 import { refreshCompatibilityDefaults } from "../services/compatibility-defaults.js";
 import { buildGeneratorExecution } from "../services/generator-execution.js";
-import { isGeneratorWorkerReady } from "../services/generator-service.js";
+import {
+  hasGeneratorWorker,
+  isGeneratorWorkerReady
+} from "../services/generator-service.js";
 import { localizeOrFallback } from "../utils/localization.js";
 import { createStatusDialog } from "./status-dialog.js";
 
@@ -13,19 +16,31 @@ export class CompatibilityCheck extends FormApplication {
   async render() {
     const mode = game.settings.get(MODULE_ID, "executionMode");
     const showStatusDialogs = game.settings.get(MODULE_ID, "showStatusDialogs");
-    const execution = await buildGeneratorExecution();
-    if (!execution) return this;
+    const needsDeveloperProject = mode === EXECUTION_MODES.DEVELOPER
+      && !hasGeneratorWorker(mode);
     const status = createStatusDialog(
-      isGeneratorWorkerReady(mode)
-        ? "StatusCheckingCompatibility"
-        : "StatusLoadingGenerator",
-      isGeneratorWorkerReady(mode)
-        ? "Checking generator compatibility…"
-        : "Loading generator module…",
+      needsDeveloperProject
+        ? "StatusReadingDeveloperProject"
+        : isGeneratorWorkerReady(mode)
+          ? "StatusCheckingCompatibility"
+          : "StatusLoadingGenerator",
+      needsDeveloperProject
+        ? "Selecting and reading Developer project…"
+        : isGeneratorWorkerReady(mode)
+          ? "Checking generator compatibility…"
+          : "Loading generator module…",
       showStatusDialogs
     );
 
     try {
+      const execution = await buildGeneratorExecution();
+      if (!execution) {
+        status.close();
+        return this;
+      }
+      if (needsDeveloperProject) {
+        status.update("StatusLoadingGenerator", "Loading generator module…");
+      }
       const report = await refreshCompatibilityDefaults(
         execution,
         (stage) => updateCompatibilityStatus(status, stage)
