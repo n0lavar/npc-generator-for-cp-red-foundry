@@ -28,6 +28,16 @@ GM-only execution modes:
 - **Developer** asks for a local generator project through the browser File
   System Access API and imports its Python sources directly.
 
+To update the bundled generator from a published Git tag, run:
+
+```console
+python tools/update-bundled-generator.py <tag>
+```
+
+The script verifies that the tag exists, builds its wheel, validates the
+distribution metadata, updates the worker reference, and removes the previous
+bundled wheel only after the new wheel has been built successfully.
+
 The first generation in a Foundry session downloads Pyodide and Python
 dependencies, so it requires an internet connection and can take noticeably
 longer than subsequent generations. **Create Actor** writes the generated object

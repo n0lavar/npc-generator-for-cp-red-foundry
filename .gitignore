@@ -7,3 +7,5 @@ Thumbs.db
 # Dependencies and build output
 node_modules/
 dist/
+__pycache__/
+*.py[cod]
