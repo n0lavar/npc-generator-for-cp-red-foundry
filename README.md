@@ -1,83 +1,129 @@
-# NPC Generator for Cyberpunk RED
+# NPC Generator for Cyberpunk RED - Foundry Module
 
-A Foundry Virtual Tabletop 12 module for generating Cyberpunk RED NPCs.
+A Foundry Virtual Tabletop module that generates and imports ready-to-use
+non-player characters for the Cyberpunk RED game system.
 
-The module is intended to import characters produced by
-[n0lavar/cp_red_npc_generator](https://github.com/n0lavar/cp_red_npc_generator)
-into the Cyberpunk RED game system.
+[![Patreon](https://img.shields.io/badge/Patreon-F96854?logo=patreon&logoColor=white)](https://www.patreon.com/cw/n0lavar)
+[![BuyMeACoffee](https://raw.githubusercontent.com/pachadotdev/buymeacoffee-badges/main/bmc-donate-yellow.svg)](https://buymeacoffee.com/n0lavar)
 
-The current scaffold adds a **Generate NPC** button to the Actor Directory,
-between the **Create Actor** and **Create Folder** controls. The button opens an
-NPC customization and generation settings dialog.
+The module runs the
+[NPC generator](https://github.com/n0lavar/cp_red_npc_generator)
+from inside Foundry, translates its output into Cyberpunk RED Actor and Item
+documents, and creates the NPC in the active world.
 
-On first use, the module copies `settings.example.json` to a persistent browser
-file named `settings.json`. Its values become the defaults in the Generate NPC
-dialog, and changes made in the dialog are written back to that file. The file
-is stored in the browser's origin-private file system because Foundry modules
-cannot write into their installed module directory at runtime.
+> This project is a Foundry integration for the generator. Generator rules,
+> character generation logic, and generator configuration are maintained in
+> the main generator repository linked above.
 
-For a GM, the module runs its compatibility check when the world becomes ready.
-Skills that are unavailable in the world and its Item compendiums are saved as
-the `forbidden-skills` default and are excluded from subsequent generation.
-Running the compatibility check manually refreshes the same default.
+## What the Module Does
 
-The generator runs in a Web Worker through Pyodide. The module provides two
-GM-only execution modes:
+- Adds a **Generate NPC** button to the Actor Directory for GMs.  
+![alt text](images/generate-npc-button.png)
+- Provides a dialog for selecting the NPC rank, role, and generation options.  
+![alt text](images/generate-npc-dialog.png)
+- Runs the Python generator in the browser through Pyodide.
+- Creates a Cyberpunk RED character Actor from the generated data.
+- Imports generated stats, skills, role data, cyberware, armor, weapons,
+  ammunition, equipment, junk, and money.
+- Resolves supported equipment from every available Item compendium, including
+  content provided by other installed modules.
+- Clones complete compendium Items so system icons, effects, metadata, and
+  schema defaults are retained.
+- Equips imported armor and weapons and updates tracked armor locations.
+- Checks the current world for generator compatibility and excludes skills
+  that are unavailable in the installed system and compendiums.
+- Reports generated entries that cannot be matched instead of silently
+  discarding them.
 
-- **Bundled** installs the packaged generator wheel from `vendor/wheels/`.
-- **Developer** asks for a local generator project through the browser File
-  System Access API and imports its Python sources directly.
+## Usage
 
-To update the bundled generator from a published Git tag, run:
+1. Open the **Actors** directory as a GM.
+2. Select **Generate NPC**.
+3. Choose the rank, role, and other generation settings.
+4. Select **Create Actor**.
+5. Wait for generation and import to complete.
 
-```console
-python tools/update-bundled-generator.py <tag>
-```
+Generation settings are initialized from `settings.example.json`. Changes made
+in the dialog are stored as browser-private data for the current Foundry
+origin; the installed module directory is not modified at runtime.
 
-The script verifies that the tag exists, builds its wheel, validates the
-distribution metadata, updates the worker reference, and removes the previous
-bundled wheel only after the new wheel has been built successfully.
+## Generator Modes
 
-The first generation in a Foundry session downloads Pyodide and Python
-dependencies, so it requires an internet connection and can take noticeably
-longer than subsequent generations. **Create Actor** writes the generated object
-to the browser console and creates a Cyberpunk RED character Actor. The Actor
-name combines the generated name and surname. Stats and embedded skills are
-matched by name and updated from the generated values. Generated cyberware is
-resolved by exact name across all available Item compendiums. Core cyberware
-already created by the system is reused, while other implants are cloned and
-installed into their generated parent through the Cyberpunk RED system API;
-paired or repeated implants remain separate items. Generated armor is
-created as embedded Armor items and equipped immediately. Generated weapons are
-resolved by their branded or generic quality-aware names across all available
-Item compendiums, cloned as embedded Weapon items, and equipped. Armor lookup
-also searches every available Item compendium, including packs from modules.
-Generated inventory entries whose generator type is `ammo` are resolved through
-the same global compendium lookup, cloned as embedded Ammo items, and assigned
-the quantity generated for the NPC. Inventory entries whose generator type is
-`equipment` are resolved by beautiful name (falling back to their generic name)
-across all Item compendiums, cloned as embedded Gear items, and assigned their
-generated quantity. Junk is resolved by exact name across the same global Gear
-index. Missing junk is created as Gear with its generated amount and market
-price. The special `Eddies` junk entry is deposited into the Actor's wealth
-instead of being created as an Item.
+The module provides two GM-only execution modes.
 
-## LM Studio and CORS
+### Bundled
 
-AI-generated descriptions can use an OpenAI-compatible LM Studio server. Since
-the generator runs in the browser, LM Studio must allow cross-origin requests
-from Foundry. Open **Developer > Server Settings** in LM Studio, enable
-**Enable CORS**, and restart the server.
+Uses the generator wheel packaged in `vendor/wheels/`. This is the normal mode
+for module users.
 
-Alternatively, start the server with CORS enabled from the command line:
+### Developer
+
+Prompts for a local checkout of the main generator project and imports its
+current Python source directly through the browser File System Access API. Use
+this mode when developing both projects together.
+
+The current Developer mode source and its representative output define the
+supported generator contract.
+
+## Compatibility Check
+
+When a GM's world becomes ready, the module compares the generator's supported
+skills and equipment with the Cyberpunk RED system and all available Item
+compendiums. Missing skills are saved as generation defaults and excluded from
+later NPC generation.
+
+Run **Check compatibility** from the module settings whenever the system,
+generator, or installed content modules change.
+
+## Optional AI Descriptions with LM Studio
+
+The generator can request descriptions from an OpenAI-compatible LM Studio
+server. Because generation runs in the browser, LM Studio must accept
+cross-origin requests from Foundry.
+
+In LM Studio, open **Developer > Server Settings**, enable **Enable CORS**, and
+restart the server. Alternatively:
 
 ```powershell
 lms server stop
 lms server start --cors
 ```
 
-Without CORS, the browser blocks requests from Foundry (normally
-`http://localhost:30000`) to LM Studio (normally
-`http://localhost:1234/v1`). Do not use `no-cors`: it produces an opaque
-response that the generator cannot read. To generate an NPC without an AI
-description, leave Model ID, Model API key, or Model base URL empty.
+Foundry commonly runs at `http://localhost:30000`, while LM Studio commonly
+runs at `http://localhost:1234/v1`. Without CORS, the browser blocks the
+request. Leaving the Model ID, API key, or base URL empty disables AI-generated
+descriptions.
+
+## Updating the Bundled Generator
+
+To package a published generator tag:
+
+```console
+python tools/update-bundled-generator.py <tag>
+```
+
+The update script verifies the tag, builds and validates the wheel, updates the
+worker reference, and removes the previous wheel only after the replacement is
+ready.
+
+## Troubleshooting
+
+- If the generator appears slow on first use, allow time for Pyodide and Python
+  dependencies to download.
+- If an Item is reported as unmatched, verify that an Item with the expected
+  name and type exists in an enabled compendium.
+- If available content has changed, run **Check compatibility** again.
+- If Developer mode cannot load the project, select the current
+  `cp_red_npc_generator` project directory again.
+- If LM Studio requests fail, verify its server URL and CORS setting.
+
+Technical errors are written to the browser console with the `NPC Generator |`
+prefix.
+
+## Related Project
+
+- [Cyberpunk RED NPC Generator](https://github.com/n0lavar/cp_red_npc_generator)
+
+## License
+
+No license has been declared in this repository yet.
