@@ -10,7 +10,7 @@
   "model_base_url": "http://localhost:1234/v1",
   "model_language": "English",
   "flat": null,
-  "foundry-json": false,
+  "json-output": false,
   "log-level": "INFO",
   "allow-non-basic-ammo": true,
   "allow-grenades": true,
