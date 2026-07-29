@@ -10,7 +10,7 @@ The character data originates from [n0lavar/cp_red_npc_generator](https://github
 
 - Foundry Virtual Tabletop: version 12
 - Game system: Cyberpunk RED
-- Module ID: `npc_generator_for_cp_red_foundry`
+- Module ID: `npc-generator-for-cp-red-foundry`
 - Module manifest: `module.json`
 - JavaScript entry point: `scripts/main.js`
 

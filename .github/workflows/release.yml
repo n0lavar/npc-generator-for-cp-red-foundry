@@ -29,7 +29,7 @@ jobs:
         shell: bash
         run: |
           mkdir -p release
-          cp module.json README.md settings.example.json release/
+          cp module.json README.md LICENSE settings.example.json release/
           cp -R images lang scripts styles templates vendor release/
           (
             cd release
