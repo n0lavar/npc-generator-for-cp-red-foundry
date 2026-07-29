@@ -5,6 +5,7 @@ import {
   buildAmmoImportRequests,
   buildArmorImportRequests,
   buildCyberwareImportRequests,
+  buildDrugImportRequests,
   getCyberwareArmorName,
   buildEquipmentImportRequests,
   buildJunkImportRequests,
@@ -180,6 +181,26 @@ test("builds equipment requests with the beautiful name first", () => {
     ],
     unmatched: []
   });
+});
+
+test("builds drug requests only from typed Developer mode inventory entries", () => {
+  const result = buildDrugImportRequests([
+    { item: { name: "Black Lace", type: "drug", price: 50, quality: null }, amount: 2 },
+    { item: { name: "Agent", type: "equipment", price: 100 }, amount: 1 }
+  ]);
+
+  assert.deepEqual(result, {
+    requests: [{ name: "Black Lace", candidates: ["Black Lace"], amount: 2 }],
+    unmatched: []
+  });
+});
+
+test("reports drugs with an invalid amount", () => {
+  const result = buildDrugImportRequests([
+    { item: { name: "Synthcoke", type: "drug", price: 20 }, amount: 0 }
+  ]);
+
+  assert.deepEqual(result, { requests: [], unmatched: ["Synthcoke"] });
 });
 
 test("preserves Developer mode armor names for exact compendium lookup", () => {

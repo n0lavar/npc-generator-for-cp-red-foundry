@@ -11,6 +11,7 @@ import { importSkills } from "./skill-importer.js";
 import { createWeapons } from "./weapon-importer.js";
 import { createCyberware } from "./cyberware-importer.js";
 import { createEquipment } from "./equipment-importer.js";
+import { createDrugs } from "./drug-importer.js";
 import { createJunk } from "./junk-importer.js";
 import { createRole } from "./role-importer.js";
 import { localizeOrFallback } from "../utils/localization.js";
@@ -59,6 +60,7 @@ export async function createActorFromNpc(npc, onProgress, tokenDisposition = -1)
     onProgress?.("importingInventory");
     const ammoResult = await createAmmo(actor, npc.inventory);
     const equipmentResult = await createEquipment(actor, npc.inventory);
+    const drugResult = await createDrugs(actor, npc.inventory);
     const junkResult = await createJunk(actor, npc.inventory);
 
     reportUnmatchedNames("stats", statMapping.unmatched);
@@ -69,6 +71,7 @@ export async function createActorFromNpc(npc, onProgress, tokenDisposition = -1)
     reportUnmatchedNames("weapons", weaponResult.unmatched);
     reportUnmatchedNames("ammo", ammoResult.unmatched);
     reportUnmatchedNames("equipment", equipmentResult.unmatched);
+    reportUnmatchedNames("drugs", drugResult.unmatched);
     reportUnmatchedNames("junk", junkResult.unmatched);
     return actor;
   } catch (error) {
