@@ -1,4 +1,4 @@
-# NPC Generator for Cyberpunk RED - Foundry Module
+# NPC Generator - Foundry Module
 
 A Foundry Virtual Tabletop module that generates and imports ready-to-use
 non-player characters for the Cyberpunk RED game system.
@@ -126,10 +126,17 @@ ready.
 Technical errors are written to the browser console with the `NPC Generator |`
 prefix.
 
-## Related Project
+## Links
 
-- [Cyberpunk RED NPC Generator](https://github.com/n0lavar/cp_red_npc_generator)
+- [NPC Generator](https://github.com/n0lavar/cp_red_npc_generator)
 
 ## License
 
-No license has been declared in this repository yet.
+The original source code of this project is licensed under GNU GPLv3.
+Third-party intellectual property
+
+This tool is not intended to replace the Cyberpunk RED Core Rulebook.
+
+Cyberpunk, Cyberpunk RED, Night City, and related names, terminology, game data, and other intellectual property belong to R. Talsorian Games and/or their respective licensors. Such material is not licensed under GNU GPLv3 by this repository.
+
+NPC Generator Foundry Module is unofficial content provided under the Homebrew Content Policy of R. Talsorian Games and is not approved or endorsed by RTG. This content references materials that are the property of R. Talsorian Games and its licensees.
