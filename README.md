@@ -3,6 +3,13 @@
 A Foundry Virtual Tabletop module that generates and imports ready-to-use
 non-player characters for the Cyberpunk RED game system.
 
+[![Foundry VTT v12](https://img.shields.io/badge/Foundry_VTT-v12-7a0d0d)](https://foundryvtt.com/)
+[![Cyberpunk RED](https://img.shields.io/badge/System-Cyberpunk_RED-e4002b)](https://foundryvtt.com/packages/cyberpunk-red-core)
+[![GitHub Release](https://img.shields.io/github/v/release/n0lavar/npc-generator-for-cp-red-foundry)](https://github.com/n0lavar/npc-generator-for-cp-red-foundry/releases/latest)
+[![Release](https://github.com/n0lavar/npc-generator-for-cp-red-foundry/actions/workflows/release.yml/badge.svg)](https://github.com/n0lavar/npc-generator-for-cp-red-foundry/actions/workflows/release.yml)
+[![GitHub Downloads](https://img.shields.io/github/downloads/n0lavar/npc-generator-for-cp-red-foundry/total)](https://github.com/n0lavar/npc-generator-for-cp-red-foundry/releases)
+[![License: GPLv3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+
 [![Patreon](https://img.shields.io/badge/Patreon-F96854?logo=patreon&logoColor=white)](https://www.patreon.com/cw/n0lavar)
 [![BuyMeACoffee](https://raw.githubusercontent.com/pachadotdev/buymeacoffee-badges/main/bmc-donate-yellow.svg)](https://buymeacoffee.com/n0lavar)
 
