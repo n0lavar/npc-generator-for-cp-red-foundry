@@ -74,7 +74,8 @@ assert.deepEqual(buildActorBiographyUpdate({
     tragic_love_affairs: [],
     life_goal: "Get what's yours"
   },
-  description: "First line\nSecond <line>"
+  description: "First line\nSecond <line>",
+  trauma_team_status: "SILVER"
 }), {
   "system.lifepath.culturalOrigin": "<p>Eastern Europe</p><p>Russian</p>",
   "system.lifepath.personality": "<p>Stable &amp; serious</p>",
@@ -85,13 +86,21 @@ assert.deepEqual(buildActorBiographyUpdate({
   "system.lifepath.friends": "<ol><li><strong>Relationship to you:</strong> A teacher or mentor.</li></ol>",
   "system.lifepath.enemies": "<ol><li><strong>Who:</strong> Ex-friend<br><strong>Cause:</strong> Lost face<br><strong>Wronged party:</strong> You<br><strong>Resources:</strong> Just themselves<br><strong>Reaction:</strong> Avoid them</li></ol>",
   "system.lifepath.lifeGoals": "<p>Get what&#039;s yours</p>",
-  "system.information.notes": "<p>First line<br>Second &lt;line&gt;</p>"
+  "system.information.notes": "<p><strong>Trauma Team status:</strong> Silver</p><p><br></p><p>First line<br>Second &lt;line&gt;</p>"
 });
 
 assert.deepEqual(buildActorBiographyUpdate({
   lifepath: {},
-  description: ""
-}), {});
+  description: "",
+  trauma_team_status: "NONE"
+}), {
+  "system.information.notes": "<p><strong>Trauma Team status:</strong> None</p>"
+});
+
+assert.throws(
+  () => buildActorBiographyUpdate({ trauma_team_status: "PLATINUM" }),
+  /Unsupported Trauma Team status/
+);
 
 assert.deepEqual(buildActorBiographyUpdate({
   lifepath: {

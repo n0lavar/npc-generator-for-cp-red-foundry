@@ -17,6 +17,7 @@ import { createRole } from "./role-importer.js";
 import { localizeOrFallback } from "../utils/localization.js";
 
 const ACTOR_TYPE = "character";
+const TRAUMA_TEAM_STATUSES = new Set(["NONE", "SILVER", "EXECUTIVE"]);
 
 export async function createActorFromNpc(npc, onProgress, tokenDisposition = -1) {
   validateNpc(npc);
@@ -84,6 +85,12 @@ function getLifepathLabels() {
   return {
     friend: localizeOrFallback("FriendRelationship", "Relationship to you"),
     loveAffair: localizeOrFallback("LoveAffairOutcome", "What happened"),
+    traumaTeamStatus: localizeOrFallback("TraumaTeamStatus", "Trauma Team status"),
+    traumaTeamStatuses: {
+      NONE: localizeOrFallback("TraumaTeamStatusNone", "None"),
+      SILVER: localizeOrFallback("TraumaTeamStatusSilver", "Silver"),
+      EXECUTIVE: localizeOrFallback("TraumaTeamStatusExecutive", "Executive")
+    },
     enemy: {
       enemy: localizeOrFallback("EnemyWho", "Who"),
       cause: localizeOrFallback("EnemyCause", "Cause"),
@@ -120,6 +127,9 @@ function validateNpc(npc) {
   }
   if (typeof npc.role !== "string" || !npc.role.trim()) {
     throw new Error("The generated NPC does not contain a role.");
+  }
+  if (!TRAUMA_TEAM_STATUSES.has(npc.trauma_team_status)) {
+    throw new Error(`Unsupported Trauma Team status: ${npc.trauma_team_status}.`);
   }
 }
 

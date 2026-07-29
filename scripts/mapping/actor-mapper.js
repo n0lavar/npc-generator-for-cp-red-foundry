@@ -59,6 +59,12 @@ const LIFEPATH_FIELDS = {
 const DEFAULT_LIFEPATH_LABELS = {
   friend: "Relationship to you",
   loveAffair: "What happened",
+  traumaTeamStatus: "Trauma Team status",
+  traumaTeamStatuses: {
+    NONE: "None",
+    SILVER: "Silver",
+    EXECUTIVE: "Executive"
+  },
   enemy: {
     enemy: "Who",
     cause: "Cause",
@@ -77,6 +83,10 @@ export function buildActorBiographyUpdate(npc, labels = DEFAULT_LIFEPATH_LABELS)
     enemy: {
       ...DEFAULT_LIFEPATH_LABELS.enemy,
       ...labels?.enemy
+    },
+    traumaTeamStatuses: {
+      ...DEFAULT_LIFEPATH_LABELS.traumaTeamStatuses,
+      ...labels?.traumaTeamStatuses
     }
   };
 
@@ -97,8 +107,22 @@ export function buildActorBiographyUpdate(npc, labels = DEFAULT_LIFEPATH_LABELS)
     }
   }
 
+  const playerNotes = [];
+  if (isNonEmptyString(npc?.trauma_team_status)) {
+    const status = resolvedLabels.traumaTeamStatuses[npc.trauma_team_status];
+    if (!status) {
+      throw new Error(`Unsupported Trauma Team status: ${npc.trauma_team_status}.`);
+    }
+    playerNotes.push(
+      `<p><strong>${escapeHtml(resolvedLabels.traumaTeamStatus)}:</strong> ${escapeHtml(status)}</p>`
+    );
+  }
   if (isNonEmptyString(npc?.description)) {
-    update["system.information.notes"] = toParagraphs([npc.description]);
+    if (playerNotes.length > 0) playerNotes.push("<p><br></p>");
+    playerNotes.push(toParagraphs([npc.description]));
+  }
+  if (playerNotes.length > 0) {
+    update["system.information.notes"] = playerNotes.join("");
   }
 
   return update;
