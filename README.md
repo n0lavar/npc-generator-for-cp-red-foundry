@@ -47,6 +47,12 @@ Generation settings are initialized from `settings.example.json`. Changes made
 in the dialog are stored as browser-private data for the current Foundry
 origin; the installed module directory is not modified at runtime.
 
+![alt text](images/actor-skills.png)  
+![alt text](images/actor-gear.png)  
+![alt text](images/actor-cyber.png)  
+![alt text](images/actor-effects.png)  
+![alt text](images/actor-lifepath.png)  
+
 ## Generator Modes
 
 The module provides two GM-only execution modes.
