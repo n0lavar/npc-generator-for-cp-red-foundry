@@ -42,6 +42,20 @@ documents, and creates the NPC in the active world.
 - Reports generated entries that cannot be matched instead of silently
   discarding them.
 
+## Balance
+
+For details, see the [generator repository](https://github.com/n0lavar/cp_red_npc_generator).
+
+| Rank number | Rank name          | Combat number | Description                     |
+|-------------|--------------------|---------------|---------------------------------|
+| 0           | private            | 7-9           | weak boosters                   |
+| 1           | corporal           | 8-10          | boosters                        |
+| 2           | lieutenant         | 10-13         | starter edgerunners             |
+| 3           | captain            | 12-14         | advanced edgerunners, police    |
+| 4           | lieutenant_colonel | 13-16         | high profile gangs, local corps |
+| 5           | lieutenant_general | 16-17         | megacorps, military, mafia      |
+| 6           | general            | 17-18         | MaxTac, special forces, legends |
+
 ## Usage
 
 1. Open the **Actors** directory as a GM.
