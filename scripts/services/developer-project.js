@@ -15,31 +15,44 @@ const EXCLUDED_DIRECTORIES = new Set([
 const INCLUDED_EXTENSIONS = new Set([".json", ".md", ".py", ".toml"]);
 
 let cachedHandle;
+let cachedFileSelection;
 
 export async function selectDeveloperProject() {
-  if (!("showDirectoryPicker" in window)) {
-    throw new Error("This browser does not support directory selection.");
+  if ("showDirectoryPicker" in window) {
+    cachedHandle = await window.showDirectoryPicker({
+      id: "cp-red-npc-generator-project",
+      mode: "read"
+    });
+    cachedFileSelection = undefined;
+    await storeHandle(cachedHandle);
+    resetGeneratorWorker();
+    return cachedHandle.name;
   }
 
-  cachedHandle = await window.showDirectoryPicker({
-    id: "cp-red-npc-generator-project",
-    mode: "read"
-  });
-  await storeHandle(cachedHandle);
+  cachedFileSelection = await selectDirectoryFiles();
+  cachedHandle = undefined;
   resetGeneratorWorker();
-  return cachedHandle.name;
+  return cachedFileSelection.name;
 }
 
 export async function getDeveloperProjectName() {
+  if (cachedFileSelection) return cachedFileSelection.name;
   const handle = await getStoredHandle();
   return handle?.name ?? null;
 }
 
 export async function collectDeveloperProject({ interactive = true } = {}) {
+  if (cachedFileSelection) {
+    return buildSelectedFileProject(cachedFileSelection.files);
+  }
+
   let handle = await getStoredHandle();
   if (!handle) {
     if (!interactive) return null;
     await selectDeveloperProject();
+    if (cachedFileSelection) {
+      return buildSelectedFileProject(cachedFileSelection.files);
+    }
     handle = cachedHandle;
   }
 
@@ -72,6 +85,64 @@ export async function collectDeveloperProject({ interactive = true } = {}) {
     files,
     transfer: files.map((file) => file.bytes)
   };
+}
+
+async function selectDirectoryFiles() {
+  const input = document.createElement("input");
+  input.type = "file";
+  input.multiple = true;
+  input.webkitdirectory = true;
+
+  const files = await new Promise((resolve, reject) => {
+    input.addEventListener("change", () => resolve(Array.from(input.files ?? [])), {
+      once: true
+    });
+    input.addEventListener("cancel", () => reject(createAbortError()), {
+      once: true
+    });
+    input.click();
+  });
+
+  if (files.length === 0) throw createAbortError();
+  const firstPath = getSelectedRelativePath(files[0]);
+  return {
+    name: firstPath.split("/")[0] || files[0].name,
+    files
+  };
+}
+
+async function buildSelectedFileProject(selectedFiles) {
+  const files = [];
+
+  for (const file of selectedFiles) {
+    const pathParts = getSelectedRelativePath(file).split("/").filter(Boolean);
+    const relativeParts = pathParts.length > 1 ? pathParts.slice(1) : pathParts;
+    if (relativeParts.some((part) => EXCLUDED_DIRECTORIES.has(part))) continue;
+
+    const path = relativeParts.join("/");
+    if (!INCLUDED_EXTENSIONS.has(getExtension(path))) continue;
+    files.push({
+      path,
+      bytes: await file.arrayBuffer()
+    });
+  }
+
+  if (files.length === 0) {
+    throw new Error("The selected generator project does not contain supported source files.");
+  }
+
+  return {
+    files,
+    transfer: files.map((file) => file.bytes)
+  };
+}
+
+function getSelectedRelativePath(file) {
+  return (file.webkitRelativePath || file.name).replaceAll("\\", "/");
+}
+
+function createAbortError() {
+  return new DOMException("Directory selection was canceled.", "AbortError");
 }
 
 async function collectDirectory(handle, parentPath, files) {
