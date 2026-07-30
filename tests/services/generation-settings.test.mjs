@@ -1,8 +1,10 @@
 import assert from "node:assert/strict";
 import {
   applyGenerationSettings,
+  loadGenerationSettings,
   mergeGenerationSettings,
-  readTokenDispositionSetting
+  readTokenDispositionSetting,
+  saveGenerationSettings
 } from "../../scripts/services/generation-settings.js";
 
 const fields = [
@@ -50,3 +52,46 @@ assert.deepEqual(
     seed: 42
   }
 );
+
+const navigatorDescriptor = Object.getOwnPropertyDescriptor(globalThis, "navigator");
+const originalFetch = globalThis.fetch;
+Object.defineProperty(globalThis, "navigator", {
+  configurable: true,
+  value: {}
+});
+globalThis.fetch = async () => ({
+  ok: true,
+  text: async () => JSON.stringify({
+    rank: "captain",
+    role: "solo",
+    "allow-description": true
+  })
+});
+
+try {
+  assert.deepEqual(
+    await loadGenerationSettings(),
+    {
+      rank: "captain",
+      role: "solo",
+      "allow-description": true
+    },
+    "packaged defaults must load when persistent browser storage is unavailable"
+  );
+  assert.deepEqual(
+    await saveGenerationSettings({ rank: "mook" }),
+    {
+      rank: "mook",
+      role: "solo",
+      "allow-description": true
+    },
+    "settings changes must remain usable for the current action without persistent storage"
+  );
+} finally {
+  globalThis.fetch = originalFetch;
+  if (navigatorDescriptor) {
+    Object.defineProperty(globalThis, "navigator", navigatorDescriptor);
+  } else {
+    delete globalThis.navigator;
+  }
+}

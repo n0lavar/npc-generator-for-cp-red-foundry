@@ -10,6 +10,7 @@ const TOKEN_DISPOSITIONS = new Set([-2, -1, 0, 1]);
  */
 export async function loadGenerationSettings() {
   const root = await getStorageRoot();
+  if (!root) return loadExampleSettings();
 
   try {
     const handle = await root.getFileHandle(SETTINGS_FILE_NAME);
@@ -26,9 +27,11 @@ export async function loadGenerationSettings() {
 /** Persists changed form values while retaining settings hidden from the UI. */
 export async function saveGenerationSettings(values) {
   const root = await getStorageRoot();
-  const current = await loadGenerationSettings();
+  const current = root
+    ? await loadSettings(root)
+    : await loadExampleSettings();
   const settings = mergeGenerationSettings(current, values);
-  await writeSettings(root, settings);
+  if (root) await writeSettings(root, settings);
   return settings;
 }
 
@@ -61,11 +64,20 @@ export function mergeGenerationSettings(settings, values) {
 }
 
 async function getStorageRoot() {
-  if (!navigator.storage?.getDirectory) {
-    throw new Error("Persistent browser file storage is not available.");
-  }
+  if (!navigator.storage?.getDirectory) return null;
   const originRoot = await navigator.storage.getDirectory();
   return originRoot.getDirectoryHandle(MODULE_ID, { create: true });
+}
+
+async function loadSettings(root) {
+  try {
+    const handle = await root.getFileHandle(SETTINGS_FILE_NAME);
+    return parseSettings(await (await handle.getFile()).text());
+  } catch (error) {
+    if (error?.name !== "NotFoundError") throw error;
+  }
+
+  return loadExampleSettings();
 }
 
 async function loadExampleSettings() {
