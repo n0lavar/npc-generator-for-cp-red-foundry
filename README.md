@@ -154,7 +154,8 @@ prefix.
 ## License
 
 The original source code of this project is licensed under GNU GPLv3.
-Third-party intellectual property
+
+### Third-party intellectual property
 
 This tool is not intended to replace the Cyberpunk RED Core Rulebook.
 

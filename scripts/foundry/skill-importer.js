@@ -3,11 +3,16 @@ import { collectCompendiumItemEntries } from "./item-compendium.js";
 
 export async function importSkills(actor, generatedSkills) {
   const mapping = buildSkillUpdates(actor.itemTypes.skill, generatedSkills);
+  const importedNames = (actor.itemTypes.skill ?? [])
+    .filter((skill) => Object.keys(generatedSkills ?? {}).some(
+      (name) => normalizeDocumentName(name) === normalizeDocumentName(skill.name)
+    ))
+    .map((skill) => skill.name);
 
   if (mapping.updates.length > 0) {
     await actor.updateEmbeddedDocuments("Item", mapping.updates);
   }
-  if (mapping.unmatched.length === 0) return { unmatched: [] };
+  if (mapping.unmatched.length === 0) return { unmatched: [], importedNames };
 
   const skillsByName = new Map();
   for (const match of await collectCompendiumItemEntries(["skill"])) {
@@ -29,8 +34,9 @@ export async function importSkills(actor, generatedSkills) {
     delete source._id;
     source.system.level = generatedSkills[generatedName];
     sources.push(source);
+    importedNames.push(source.name);
   }
 
   if (sources.length > 0) await actor.createEmbeddedDocuments("Item", sources);
-  return { unmatched };
+  return { unmatched, importedNames };
 }
