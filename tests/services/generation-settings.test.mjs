@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import {
   applyGenerationSettings,
   loadGenerationSettings,
@@ -6,6 +7,15 @@ import {
   readTokenDispositionSetting,
   saveGenerationSettings
 } from "../../scripts/services/generation-settings.js";
+
+const packagedSettings = JSON.parse(
+  await readFile(new URL("../../settings.example.json", import.meta.url), "utf8")
+);
+assert.equal(
+  packagedSettings["allow-description"],
+  false,
+  "AI descriptions must require explicit opt-in"
+);
 
 const fields = [
   { name: "rank", default: "mook" },
@@ -64,7 +74,7 @@ globalThis.fetch = async () => ({
   text: async () => JSON.stringify({
     rank: "captain",
     role: "solo",
-    "allow-description": true
+    "allow-description": false
   })
 });
 
@@ -74,7 +84,7 @@ try {
     {
       rank: "captain",
       role: "solo",
-      "allow-description": true
+      "allow-description": false
     },
     "packaged defaults must load when persistent browser storage is unavailable"
   );
@@ -83,7 +93,7 @@ try {
     {
       rank: "mook",
       role: "solo",
-      "allow-description": true
+      "allow-description": false
     },
     "settings changes must remain usable for the current action without persistent storage"
   );

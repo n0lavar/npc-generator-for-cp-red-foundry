@@ -1,9 +1,12 @@
-import { loadPyodide } from "https://cdn.jsdelivr.net/pyodide/v314.0.2/full/pyodide.mjs";
-
-const PYODIDE_BASE_URL = "https://cdn.jsdelivr.net/pyodide/v314.0.2/full/";
 const MODULE_BASE_URL = new URL("../../", self.location.href);
+const PYODIDE_BASE_URL = new URL("vendor/pyodide/", MODULE_BASE_URL).href;
+const PYODIDE_MODULE_URL = new URL("pyodide.js", PYODIDE_BASE_URL).href;
 const BUNDLED_WHEEL_URL = new URL(
   "vendor/wheels/cp_red_npc_generator-0.1.0-py3-none-any.whl",
+  MODULE_BASE_URL
+).href;
+const BUNDLED_WHEELS_MANIFEST_URL = new URL(
+  "vendor/wheels/bundled-wheels.json",
   MODULE_BASE_URL
 ).href;
 
@@ -53,13 +56,15 @@ async function initialize({ mode, files = [] }) {
     return;
   }
 
+  const { loadPyodide } = await import(PYODIDE_MODULE_URL);
   pyodide = await loadPyodide({ indexURL: PYODIDE_BASE_URL });
   await pyodide.loadPackage(["numpy", "micropip"]);
 
   if (mode === "bundled") {
+    const bundledWheels = await loadBundledWheels();
     await pyodide.runPythonAsync(`
 import micropip
-await micropip.install(${JSON.stringify(BUNDLED_WHEEL_URL)})
+await micropip.install(${JSON.stringify(bundledWheels)}, deps=False)
 `);
   } else if (mode === "developer") {
     writeDeveloperFiles(files);
@@ -70,6 +75,35 @@ await micropip.install(${JSON.stringify(BUNDLED_WHEEL_URL)})
   }
 
   initializedMode = mode;
+}
+
+async function loadBundledWheels() {
+  const response = await fetch(BUNDLED_WHEELS_MANIFEST_URL);
+  if (!response.ok) {
+    throw new Error(
+      `Could not load bundled wheel manifest: HTTP ${response.status}.`
+    );
+  }
+
+  const wheelNames = await response.json();
+  if (
+    !Array.isArray(wheelNames)
+    || !wheelNames.length
+    || !wheelNames.every(
+      (name) => typeof name === "string"
+        && /^[A-Za-z0-9_.+-]+\.whl$/.test(name)
+    )
+  ) {
+    throw new Error("The bundled wheel manifest is invalid.");
+  }
+
+  if (!wheelNames.includes(BUNDLED_WHEEL_URL.split("/").at(-1))) {
+    throw new Error("The bundled generator wheel is missing from its manifest.");
+  }
+
+  return wheelNames.map(
+    (name) => new URL(`vendor/wheels/${name}`, MODULE_BASE_URL).href
+  );
 }
 
 function writeDeveloperFiles(files) {

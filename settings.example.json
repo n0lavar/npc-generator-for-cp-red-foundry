@@ -4,7 +4,7 @@
   "seed": 0,
   "token_disposition": -1,
   "nationality": null,
-  "allow-description": true,
+  "allow-description": false,
   "model_id": "qwen/qwen3.6-35b-a3b",
   "model_api_key": "lm-studio",
   "model_base_url": "http://localhost:1234/v1",
