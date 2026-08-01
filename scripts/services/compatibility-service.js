@@ -5,7 +5,7 @@ import {
   getCyberwareArmorName,
   buildWeaponNameCandidates
 } from "../mapping/item-mapper.js";
-import { collectCompendiumItemEntries } from "../foundry/item-compendium.js";
+import { collectItemSourceEntries } from "../foundry/item-compendium.js";
 import { getCompatibilityCatalog } from "./generator-service.js";
 
 const TECHNICAL_CYBERWARE_NAMES = new Set([
@@ -24,23 +24,16 @@ const TECHNICAL_CYBERWARE_NAMES = new Set([
 export async function checkCompatibility(execution, onProgress) {
   const catalog = await getCompatibilityCatalog(execution, onProgress);
   onProgress?.("collectingDocuments");
-  const documents = await collectItemDocuments();
-  const equipmentEntries = await collectCompendiumItemEntries(["armor", "weapon"]);
-  const armorNames = getEntryNames(equipmentEntries, "armor");
-  const weaponNames = getEntryNames(equipmentEntries, "weapon");
+  const itemEntries = await collectItemSourceEntries();
+  const armorNames = getEntryNames(itemEntries, "armor");
+  const weaponNames = getEntryNames(itemEntries, "weapon");
   const statNames = getCharacterStatNames();
-  const skillNames = documents
-    .filter((document) => document.type === "skill")
-    .map((document) => document.name);
-  const itemNames = documents
-    .filter((document) => document.type !== "skill")
-    .map((document) => document.name);
-  const ammoNames = documents
-    .filter((document) => document.type === "ammo")
-    .map((document) => document.name);
-  const cyberwareNames = documents
-    .filter((document) => document.type === "cyberware")
-    .map((document) => document.name);
+  const skillNames = getEntryNames(itemEntries, "skill");
+  const itemNames = itemEntries
+    .filter((match) => match.entry.type !== "skill")
+    .map((match) => match.entry.name);
+  const ammoNames = getEntryNames(itemEntries, "ammo");
+  const cyberwareNames = getEntryNames(itemEntries, "cyberware");
 
   return {
     stats: buildNormalizedResult(catalog.stats, statNames),
@@ -157,19 +150,4 @@ function getCharacterStatNames() {
   const fields = statsField?.fields ?? statsField?.schema?.fields;
   if (!fields) throw new Error("The Cyberpunk RED character stat schema could not be inspected.");
   return Object.keys(fields);
-}
-
-async function collectItemDocuments() {
-  const documents = [...game.items.contents];
-  const itemPacks = game.packs.filter((pack) => pack.documentName === "Item");
-
-  for (const pack of itemPacks) {
-    try {
-      documents.push(...await pack.getDocuments());
-    } catch (error) {
-      console.warn(`NPC Generator | Could not inspect Item pack ${pack.collection}.`, error);
-    }
-  }
-
-  return documents;
 }

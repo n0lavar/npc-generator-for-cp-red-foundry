@@ -1,11 +1,14 @@
 import { buildJunkImportRequests } from "../mapping/item-mapper.js";
-import { collectCompendiumItemEntries } from "./item-compendium.js";
+import {
+  collectItemSourceEntries,
+  getItemSourceDocument
+} from "./item-compendium.js";
 
 export async function createJunk(actor, generatedInventory) {
   const mapping = buildJunkImportRequests(generatedInventory);
   const gearByName = new Map();
 
-  for (const match of await collectCompendiumItemEntries(["gear"])) {
+  for (const match of await collectItemSourceEntries(["gear"])) {
     if (!gearByName.has(match.entry.name)) gearByName.set(match.entry.name, match);
   }
 
@@ -13,7 +16,7 @@ export async function createJunk(actor, generatedInventory) {
   for (const request of mapping.requests) {
     const match = request.candidates.map((candidate) => gearByName.get(candidate)).find(Boolean);
     if (match) {
-      const document = await match.pack.getDocument(match.entry._id);
+      const document = await getItemSourceDocument(match);
       const source = document.toObject();
       delete source._id;
       source.system.amount = request.amount;

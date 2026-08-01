@@ -1,8 +1,11 @@
-import { collectCompendiumItemEntries } from "./item-compendium.js";
+import {
+  collectItemSourceEntries,
+  getItemSourceDocument
+} from "./item-compendium.js";
 
 export async function buildCompendiumItemSources(itemType, requests, prepareSource) {
   const itemsByName = new Map();
-  for (const match of await collectCompendiumItemEntries([itemType])) {
+  for (const match of await collectItemSourceEntries([itemType])) {
     if (!itemsByName.has(match.entry.name)) itemsByName.set(match.entry.name, match);
   }
 
@@ -18,7 +21,7 @@ export async function buildCompendiumItemSources(itemType, requests, prepareSour
       continue;
     }
 
-    const document = await match.pack.getDocument(match.entry._id);
+    const document = await getItemSourceDocument(match);
     const source = document.toObject();
     delete source._id;
     prepareSource?.(source, request);

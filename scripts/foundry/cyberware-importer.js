@@ -2,7 +2,10 @@ import {
   buildCyberwareImportRequests,
   getCyberwareArmorName
 } from "../mapping/item-mapper.js";
-import { collectCompendiumItemEntries } from "./item-compendium.js";
+import {
+  collectItemSourceEntries,
+  getItemSourceDocument
+} from "./item-compendium.js";
 
 export async function createCyberware(actor, generatedCyberware) {
   const mapping = buildCyberwareImportRequests(generatedCyberware);
@@ -21,7 +24,7 @@ export async function createCyberware(actor, generatedCyberware) {
       continue;
     }
 
-    const document = await match.pack.getDocument(match.entry._id);
+    const document = await getItemSourceDocument(match);
     const source = document.toObject();
     if (source.system?.core) {
       const existingCoreItem = findOwnedCoreCyberware(actor, source.name);
@@ -62,7 +65,7 @@ export async function createCyberware(actor, generatedCyberware) {
 
 async function buildCyberwareIndex() {
   const itemsByName = new Map();
-  for (const match of await collectCompendiumItemEntries(["cyberware"])) {
+  for (const match of await collectItemSourceEntries(["cyberware"])) {
     if (!itemsByName.has(match.entry.name)) itemsByName.set(match.entry.name, match);
   }
   return itemsByName;

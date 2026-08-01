@@ -1,5 +1,8 @@
 import { buildSkillUpdates, normalizeDocumentName } from "../mapping/actor-mapper.js";
-import { collectCompendiumItemEntries } from "./item-compendium.js";
+import {
+  collectItemSourceEntries,
+  getItemSourceDocument
+} from "./item-compendium.js";
 
 export async function importSkills(actor, generatedSkills) {
   const mapping = buildSkillUpdates(actor.itemTypes.skill, generatedSkills);
@@ -15,7 +18,7 @@ export async function importSkills(actor, generatedSkills) {
   if (mapping.unmatched.length === 0) return { unmatched: [], importedNames };
 
   const skillsByName = new Map();
-  for (const match of await collectCompendiumItemEntries(["skill"])) {
+  for (const match of await collectItemSourceEntries(["skill"])) {
     const normalizedName = normalizeDocumentName(match.entry.name);
     if (!skillsByName.has(normalizedName)) skillsByName.set(normalizedName, match);
   }
@@ -29,7 +32,7 @@ export async function importSkills(actor, generatedSkills) {
       continue;
     }
 
-    const document = await match.pack.getDocument(match.entry._id);
+    const document = await getItemSourceDocument(match);
     const source = document.toObject();
     delete source._id;
     source.system.level = generatedSkills[generatedName];

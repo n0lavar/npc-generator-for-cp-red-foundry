@@ -110,3 +110,69 @@ test("makes a newly imported Boxing specialization available to Martial Arts wea
   );
   assert.equal(created[1].system.weaponSkill, "Martial Arts (Boxing)");
 });
+
+test("imports a manually created world Martial Arts skill and weapon", async () => {
+  const worldItems = [
+    {
+      id: "arnis-skill-id",
+      name: "Martial Arts (Arnis)",
+      type: "skill",
+      toObject: () => ({
+        _id: "arnis-skill-id",
+        name: "Martial Arts (Arnis)",
+        type: "skill",
+        system: { level: 0 }
+      })
+    },
+    {
+      id: "martial-arts-weapon-id",
+      name: "Martial Arts",
+      type: "weapon",
+      toObject: () => ({
+        _id: "martial-arts-weapon-id",
+        name: "Martial Arts",
+        type: "weapon",
+        system: { equipped: "owned", weaponSkill: "MartialArts" }
+      })
+    }
+  ];
+  globalThis.game = {
+    items: { contents: worldItems },
+    packs: new Map()
+  };
+
+  const created = [];
+  const actor = {
+    itemTypes: { skill: [] },
+    async updateEmbeddedDocuments() {},
+    async createEmbeddedDocuments(_type, documents) {
+      created.push(...documents);
+      return documents;
+    }
+  };
+
+  const skillResult = await importSkills(actor, { "MartialArts (Arnis)": 8 });
+  const weaponResult = await createWeapons(
+    actor,
+    [{
+      name: "MartialArts (Arnis)",
+      quality: null,
+      skill: "MartialArts (Arnis)"
+    }],
+    skillResult.importedNames
+  );
+
+  assert.deepEqual(skillResult, {
+    unmatched: [],
+    importedNames: ["Martial Arts (Arnis)"]
+  });
+  assert.deepEqual(weaponResult, { unmatched: [] });
+  assert.deepEqual(
+    created.map((source) => [source.name, source._id]),
+    [
+      ["Martial Arts (Arnis)", undefined],
+      ["Martial Arts", undefined]
+    ]
+  );
+  assert.equal(created[1].system.weaponSkill, "Martial Arts (Arnis)");
+});

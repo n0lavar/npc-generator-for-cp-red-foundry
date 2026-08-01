@@ -74,6 +74,15 @@ origin; the installed module directory is not modified at runtime.
 ![alt text](images/actor-effects.png)  
 ![alt text](images/actor-lifepath.png)  
 
+## Installation
+
+In Foundry VTT, open **Add-on Modules**, select **Install Module**, and paste
+this manifest URL:
+
+```text
+https://raw.githubusercontent.com/n0lavar/npc-generator-for-cp-red-foundry/master/module.json
+```
+
 ## Generator Modes
 
 The module provides two GM-only execution modes.
